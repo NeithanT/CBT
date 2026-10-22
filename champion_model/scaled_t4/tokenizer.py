@@ -107,3 +107,8 @@ class ScaledTokenizer:
             else:
                 chars.append("<UNK>")
         return "".join(chars)
+
+
+# Aliases for Character Based Transformer (CBT)
+CBTTokenizer = ScaledTokenizer
+

@@ -88,8 +88,8 @@ By combining **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** with **Weight
 
 ```python
 import torch
-from model import ScaledGPT as CBT, ScaledGPTConfig as CBTConfig
-from tokenizer import ScaledTokenizer as CBTTokenizer
+from model import CBT, CBTConfig
+from tokenizer import CBTTokenizer
 
 # 1. Load configuration and model
 config = CBTConfig(

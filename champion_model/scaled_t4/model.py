@@ -419,3 +419,9 @@ class ScaledGPT(nn.Module):
                 break
 
         return idx
+
+
+# Aliases for Character Based Transformer (CBT)
+CBT = ScaledGPT
+CBTConfig = ScaledGPTConfig
+
