@@ -39,6 +39,9 @@ metrics:
 
 # Character Based Transformer (CBT): Recurrent 2D-RoPE Architecture for Algorithmic Length Extrapolation
 
+- **GitHub Repository**: [https://github.com/NeithanT/CBT](https://github.com/NeithanT/CBT)
+- **Research Paper**: [RESEARCH_PAPER.md](https://github.com/NeithanT/CBT/blob/main/RESEARCH_PAPER.md) | [Paper PDF](https://github.com/NeithanT/CBT/blob/main/RESEARCH_PAPER.pdf)
+
 ## 1. Model Overview
 
 **Character Based Transformer (CBT)** is an autoregressive Transformer model (~18.95M parameters) engineered to overcome the empirical limits of standard self-attention on sequential state machines and multi-tool agent execution.
@@ -46,7 +49,6 @@ metrics:
 By combining **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** with **Weight-Tied Recurrent Depth (R = 3)**, CBT achieves:
 - **100.0% Exact Match Accuracy** on 1 to 50 digit column arithmetic length extrapolation (including 50-digit cascading carry 99...99 + 1).
 - **100.0% Multi-Tool Routing Accuracy** across 9 tool schemas (single-tool, multi-tool chaining, nested JSON schemas, and error recovery).
-- **Dual NVIDIA T4 GPU Efficiency**: Native Turing sm_75 FP16 AMP and SDPA memory-efficient attention.
 
 ---
 
