@@ -2,7 +2,7 @@
 
 [![Paper](https://img.shields.io/badge/Paper-RESEARCH__PAPER.md-blue)](RESEARCH_PAPER.md)
 [![Status](https://img.shields.io/badge/Status-Reproducible%20%5BPASS%5D-brightgreen)](#)
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Champion%20Weights-orange)](https://huggingface.co/)
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Neithanvarvas%2FCBT-orange)](https://huggingface.co/Neithanvarvas/CBT)
 
 **Primary Scientific Reference**: [RESEARCH_PAPER.md](RESEARCH_PAPER.md)  
 **Target Hardware**: 2x NVIDIA T4 GPUs (Turing `sm_75`, 16 GB GDDR6 each, FP16 AMP)  
@@ -50,13 +50,13 @@ The repository champion model is **ScaledGPT** (~18.95M parameters), optimized f
 
 The trained model checkpoint (`champion_final.pt`, ~75.8 MB) is available on Hugging Face:
 
-- **Repository**: `[Hugging Face Model Repository Link]`
+- **Repository**: [https://huggingface.co/Neithanvarvas/CBT](https://huggingface.co/Neithanvarvas/CBT)
 - **Checkpoint file**: `champion_final.pt`
 
 To download and place the weights locally:
 ```bash
 # Using huggingface_hub
-python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='<REPO_ID>', filename='champion_final.pt', local_dir='champion_model/scaled_t4/checkpoints')"
+python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='Neithanvarvas/CBT', filename='champion_final.pt', local_dir='champion_model/scaled_t4/checkpoints')"
 ```
 
 ---
@@ -190,7 +190,7 @@ User >>
 ### Downloading Pretrained Champion Weights
 To download the champion weights from Hugging Face:
 ```bash
-python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='<username>/scaled-gpt-recurrent-2d-rope', filename='champion_final.pt', local_dir='champion_model/scaled_t4/checkpoints')"
+python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='Neithanvarvas/CBT', filename='champion_final.pt', local_dir='champion_model/scaled_t4/checkpoints')"
 ```
 
 ### Uploading Your Trained Weights to Hugging Face

@@ -145,17 +145,13 @@ def main():
     args = parse_args()
     token = args.token or os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
 
-    if not token:
-        print("[FAIL] Hugging Face token is missing.")
-        print("[INFO] Provide token via --token <TOKEN> or export HF_TOKEN=<TOKEN>")
-        sys.exit(1)
-
-    if not os.path.isfile(args.ckpt):
-        print(f"[FAIL] Checkpoint not found at: {args.ckpt}")
-        sys.exit(1)
-
-    print(f"[INFO] Initializing Hugging Face API...")
     api = HfApi(token=token)
+    try:
+        user_info = api.whoami()
+        print(f"[INFO] Authenticated as Hugging Face user: {user_info.get('name')}")
+    except Exception as e:
+        print("[FAIL] Hugging Face authentication failed. Please run `hf auth login` or pass `--token`.")
+        sys.exit(1)
 
     print(f"[INFO] Creating/Verifying repository '{args.repo_id}'...")
     api.create_repo(repo_id=args.repo_id, repo_type="model", private=args.private, exist_ok=True)
