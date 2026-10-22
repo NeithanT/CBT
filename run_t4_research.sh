@@ -43,6 +43,7 @@ show_usage() {
     echo "  benchmark [--all]   Run extrapolation benchmark across saved checkpoints"
     echo "  compare [type]      Run comparative training"
     echo "  test                Run unit test suite"
+    echo "  download            Pull champion model weights from Hugging Face"
     echo "  interact            Launch interactive model inference CLI"
     echo ""
     echo "Examples:"
@@ -103,7 +104,11 @@ case "$CMD" in
         ;;
     test)
         print_header
-        "$PY_BIN" -m unittest tests/test_math_gpt.py
+        "$PY_BIN" -m unittest discover -s tests
+        ;;
+    download)
+        print_header
+        "$PY_BIN" benchmarks/download_from_hf.py "${@:2}"
         ;;
     interact)
         print_header

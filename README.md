@@ -185,28 +185,49 @@ User >>
 
 ---
 
-## 6. Model Weights & Hugging Face Upload
+## 6. GitHub & Hugging Face Workflow
 
-### Downloading Pretrained Champion Weights
-To download the champion weights from Hugging Face:
+This project couples GitHub for version-controlled code, documentation, and evaluation suites with Hugging Face Hub for model weight distribution and deployment.
+
+| Ecosystem | Destination | Purpose |
+| :--- | :--- | :--- |
+| **GitHub** | [https://github.com/NeithanT/CBT](https://github.com/NeithanT/CBT) | Open-source code, 2D-RoPE implementation, tests, and paper |
+| **Hugging Face** | [https://huggingface.co/Neithanvarvas/CBT](https://huggingface.co/Neithanvarvas/CBT) | Pretrained champion weights (`champion_final.pt`), model card, and quickstart |
+
+### 1. Pulling Model Weights from Hugging Face
+
+Weights are automatically pulled if missing when launching inference, or can be pulled explicitly with any of the following methods:
+
+**Method A: Dedicated CLI command (Recommended)**
+```bash
+./run_t4_research.sh download
+```
+
+**Method B: Python script**
+```bash
+python benchmarks/download_from_hf.py
+```
+
+**Method C: Hugging Face Python SDK**
 ```bash
 python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='Neithanvarvas/CBT', filename='champion_final.pt', local_dir='champion_model/scaled_t4/checkpoints')"
 ```
 
-### Uploading Your Trained Weights to Hugging Face
-To publish your local weights and model card to Hugging Face:
+### 2. Pushing New Weights to Hugging Face
+
+To publish updated weights and model artifacts to Hugging Face:
 ```bash
-python benchmarks/upload_to_hf.py \
-  --repo_id "<username>/scaled-gpt-recurrent-2d-rope" \
-  --token "<your-hf-token>"
+# 1. Authenticate with your Hugging Face write token
+hf auth login
+
+# 2. Upload model bundle
+python benchmarks/upload_to_hf.py --repo_id "Neithanvarvas/CBT"
 ```
-This utility automatically packages:
-- Model weights (`champion_final.pt`, ~75.8 MB)
-- Model card metadata (`README.md` with benchmark results)
-- Architecture implementation (`model.py`)
-- Tokenizer (`tokenizer.py`)
-- Configuration hyperparameters (`config.json`)
-- Interactive CLI (`interactive.py`)
+This utility automatically bundles and verifies:
+- Trained checkpoint (`champion_final.pt`, ~75.8 MB)
+- Model card metadata (`README.md` with tags and benchmark leaderboard)
+- Architecture code (`model.py`), tokenizer (`tokenizer.py`), and hyperparameters (`config.json`)
+- Interactive CLI runner (`interactive.py`)
 
 ---
 

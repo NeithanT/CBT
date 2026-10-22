@@ -274,13 +274,23 @@ def main():
             resolved_path = p
             break
 
+    if resolved_path is None:
+        try:
+            from huggingface_hub import hf_hub_download
+            print("[INFO] Local weights not found. Automatically pulling champion weights from Hugging Face (Neithanvarvas/CBT)...")
+            target_dir = os.path.join(ROOT_DIR, "champion_model", "scaled_t4", "checkpoints")
+            resolved_path = hf_hub_download(repo_id="Neithanvarvas/CBT", filename="champion_final.pt", local_dir=target_dir)
+            print(f"[PASS] Successfully pulled weights to: {resolved_path}")
+        except Exception as e:
+            print(f"[WARN] Automatic Hugging Face pull unsuccessful ({e}).")
+
     if resolved_path is not None:
         ckpt = torch.load(resolved_path, map_location=device, weights_only=False)
         model.load_state_dict(ckpt["model_state_dict"])
         step_info = f" (Step {ckpt.get('step')})" if 'step' in ckpt else ""
         print(f"[INFO] Successfully loaded trained checkpoint{step_info} from: {resolved_path}")
     else:
-        print(f"[WARN] Checkpoint not found in candidate paths. Running with initialized weights.")
+        print(f"[WARN] Running with randomly initialized weights.")
 
     model.eval()
 
