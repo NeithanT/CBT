@@ -50,6 +50,7 @@ Trained strictly on 1- to 15-digit column additions (with random coordinate shif
 - **100.0% (20/20; 95% Wilson CI [83.9, 100.0]%)** on structured 16- to 50-digit sums (including 50-digit cascading carry $99\\dots99 + 1$).
 - **100.0% (180/180; 95% Wilson CI [97.9, 100.0]%)** on random multi-carry sums from 16 to 40 digits, and **98.8% (237/240; CI [96.4, 99.6]%)** across 16 to 50 digits (with 238/240 = 99.2% exact `<THINK>` scratchpads and zero `(` delimiter errors).
 - **90.0% (18/20)** at 55 digits before degrading beyond the shift-masked coordinate horizon $p_{\\max}=47$ (45.0% at 60d, 6.7% at 70d, 0.0% at 80–100d).
+- **Equalized 1–15d, $T=1024$ Control Study (12,800 Random Problems)**: When four equalized 100k models (`1D-RoPE Standard`, `1D-RoPE + Offset`, `1D-RoPE + Ruoss et al. 2023 Randomized Positions`, and `Decoupled 2D-RoPE k=32`) are trained on the exact same 1–15d dataset with $T=1024$ and evaluated on 200 random problems per length up to 100d, all three 1D/Ruoss variants score **0.0% (0/200, CI [0.0, 1.9]%)** across 16–100d, whereas equalized 2D-RoPE achieves **81.4% (977/1,200, CI [79.1, 83.5]%)** across 16–40d (up to 92.0% at 16d and 25d).
 - **100.0% (26/26; CI [87.1, 100.0]%)** tool routing and **96.2% (25/26)** exact argument extraction across 9 tool schemas on phrasing templates shared with training.
 - **88.9% (16/18)** zero-shot OOD tool routing, with **50.0% (8/16)** exact character argument copying (and 68.8% exact or near-exact).
 
@@ -179,7 +180,12 @@ def main():
                 print(f"  [OK] Staged {fname}")
 
         # 4. Copy research paper and random 16-100d evaluation results
-        extra_files = ["RESEARCH_PAPER.pdf", "RESEARCH_PAPER.md", "results/random_extrapolation_16_to_100d.json"]
+        extra_files = [
+            "RESEARCH_PAPER.pdf",
+            "RESEARCH_PAPER.md",
+            "results/random_extrapolation_16_to_100d.json",
+            "results/equalized_15d_1024_and_ruoss_sweep.json",
+        ]
         for ef in extra_files:
             if os.path.isfile(ef):
                 shutil.copy2(ef, os.path.join(tmp_dir, os.path.basename(ef)))

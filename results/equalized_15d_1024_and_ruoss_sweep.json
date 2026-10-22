@@ -1,0 +1,890 @@
+{
+  "part3_18m_1d_at_1024_context": {
+    "25d_cascade": {
+      "passed": false,
+      "zero_loop": false,
+      "extracted_answer_prefix": "9991000900999",
+      "gen_tail": "+9+0)=10(1+9+0)=10(1+0+0)=01(0+9+0)=09(0+9+0)=09(0+9+0)=09</THINK>=9991000900999"
+    },
+    "35d_ones_eights": {
+      "passed": false,
+      "zero_loop": false,
+      "extracted_answer_prefix": "08(0+0+0+0101999",
+      "gen_tail": "+8)=09(0+1+8)=09(0+8+8)=16(1+1+0)=02(0+1+8)=09(0+1+8)=09(0+0+8)=08(0+0+0+0101999"
+    },
+    "50d_comp": {
+      "passed": false,
+      "zero_loop": false,
+      "extracted_answer_prefix": "10880+08+8+6+5)=1",
+      "gen_tail": "10(1+6+0)=07(0+6+0)=06(0+0+0)=00(0+1+0+0+0+4+1+0+0)=01</THINK>=10880+08+8+6+5)=1"
+    },
+    "50d_cascade": {
+      "passed": false,
+      "zero_loop": false,
+      "extracted_answer_prefix": "<THINK>99999999999999999999999",
+      "gen_tail": "99999999999999999999999999999999999999999999999999999999999999999999999999999999"
+    }
+  },
+  "equalized_15d_1024_comparison": {
+    "1d_standard_15d_1024": {
+      "meta": {
+        "id": "1d_standard_15d_1024",
+        "label": "1D-RoPE Standard (1-15d, T=1024)",
+        "pos_mode": "1d_standard",
+        "k_shift": 0,
+        "final_loss": 0.09822,
+        "train_sec": 238.36
+      },
+      "pooled_seen_8_15d": {
+        "passed": 0,
+        "n": 600,
+        "accuracy": 0.0,
+        "wilson_95_ci": [
+          0.0,
+          0.6
+        ]
+      },
+      "pooled_unseen_16_40d": {
+        "passed": 0,
+        "n": 1200,
+        "accuracy": 0.0,
+        "wilson_95_ci": [
+          0.0,
+          0.3
+        ]
+      },
+      "pooled_unseen_16_50d": {
+        "passed": 0,
+        "n": 1600,
+        "accuracy": 0.0,
+        "wilson_95_ci": [
+          0.0,
+          0.2
+        ]
+      },
+      "per_length": {
+        "8": {
+          "digits": 8,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 1.39
+        },
+        "12": {
+          "digits": 12,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.85
+        },
+        "15": {
+          "digits": 15,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 1.2
+        },
+        "16": {
+          "digits": 16,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 1.28
+        },
+        "20": {
+          "digits": 20,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 1.75
+        },
+        "25": {
+          "digits": 25,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 2.53
+        },
+        "30": {
+          "digits": 30,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.39
+        },
+        "35": {
+          "digits": 35,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.37
+        },
+        "40": {
+          "digits": 40,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.44
+        },
+        "45": {
+          "digits": 45,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.54
+        },
+        "50": {
+          "digits": 50,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.63
+        },
+        "55": {
+          "digits": 55,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.65
+        },
+        "60": {
+          "digits": 60,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.89
+        },
+        "70": {
+          "digits": 70,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.7
+        },
+        "80": {
+          "digits": 80,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.84
+        },
+        "100": {
+          "digits": 100,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.37
+        }
+      }
+    },
+    "1d_shift512_15d_1024": {
+      "meta": {
+        "id": "1d_shift512_15d_1024",
+        "label": "1D-RoPE + Random Offset (1-15d, T=1024, Shift=512)",
+        "pos_mode": "1d_shift",
+        "k_shift": 512,
+        "final_loss": 0.09582,
+        "train_sec": 237.03
+      },
+      "pooled_seen_8_15d": {
+        "passed": 0,
+        "n": 600,
+        "accuracy": 0.0,
+        "wilson_95_ci": [
+          0.0,
+          0.6
+        ]
+      },
+      "pooled_unseen_16_40d": {
+        "passed": 0,
+        "n": 1200,
+        "accuracy": 0.0,
+        "wilson_95_ci": [
+          0.0,
+          0.3
+        ]
+      },
+      "pooled_unseen_16_50d": {
+        "passed": 0,
+        "n": 1600,
+        "accuracy": 0.0,
+        "wilson_95_ci": [
+          0.0,
+          0.2
+        ]
+      },
+      "per_length": {
+        "8": {
+          "digits": 8,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.46
+        },
+        "12": {
+          "digits": 12,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.84
+        },
+        "15": {
+          "digits": 15,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 1.19
+        },
+        "16": {
+          "digits": 16,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 1.17
+        },
+        "20": {
+          "digits": 20,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 1.66
+        },
+        "25": {
+          "digits": 25,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 2.38
+        },
+        "30": {
+          "digits": 30,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 3.0
+        },
+        "35": {
+          "digits": 35,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 3.87
+        },
+        "40": {
+          "digits": 40,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 4.56
+        },
+        "45": {
+          "digits": 45,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 5.78
+        },
+        "50": {
+          "digits": 50,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 6.28
+        },
+        "55": {
+          "digits": 55,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 8.48
+        },
+        "60": {
+          "digits": 60,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 9.89
+        },
+        "70": {
+          "digits": 70,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 14.4
+        },
+        "80": {
+          "digits": 80,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 16.89
+        },
+        "100": {
+          "digits": 100,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 26.57
+        }
+      }
+    },
+    "1d_ruoss_15d_1024": {
+      "meta": {
+        "id": "1d_ruoss_15d_1024",
+        "label": "1D-RoPE + Randomized Positions (Ruoss et al. 2023, 1-15d, M=1024)",
+        "pos_mode": "1d_ruoss",
+        "k_shift": 0,
+        "final_loss": 0.23179,
+        "train_sec": 271.63
+      },
+      "pooled_seen_8_15d": {
+        "passed": 0,
+        "n": 600,
+        "accuracy": 0.0,
+        "wilson_95_ci": [
+          0.0,
+          0.6
+        ]
+      },
+      "pooled_unseen_16_40d": {
+        "passed": 0,
+        "n": 1200,
+        "accuracy": 0.0,
+        "wilson_95_ci": [
+          0.0,
+          0.3
+        ]
+      },
+      "pooled_unseen_16_50d": {
+        "passed": 0,
+        "n": 1600,
+        "accuracy": 0.0,
+        "wilson_95_ci": [
+          0.0,
+          0.2
+        ]
+      },
+      "per_length": {
+        "8": {
+          "digits": 8,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.58
+        },
+        "12": {
+          "digits": 12,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 0.81
+        },
+        "15": {
+          "digits": 15,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 1.11
+        },
+        "16": {
+          "digits": 16,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 1.18
+        },
+        "20": {
+          "digits": 20,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 1.72
+        },
+        "25": {
+          "digits": 25,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 2.32
+        },
+        "30": {
+          "digits": 30,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 3.05
+        },
+        "35": {
+          "digits": 35,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 3.78
+        },
+        "40": {
+          "digits": 40,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 4.09
+        },
+        "45": {
+          "digits": 45,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 4.98
+        },
+        "50": {
+          "digits": 50,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 7.21
+        },
+        "55": {
+          "digits": 55,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 7.39
+        },
+        "60": {
+          "digits": 60,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 10.29
+        },
+        "70": {
+          "digits": 70,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 14.0
+        },
+        "80": {
+          "digits": 80,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 16.05
+        },
+        "100": {
+          "digits": 100,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 24.49
+        }
+      }
+    },
+    "2d_shift32_15d_1024": {
+      "meta": {
+        "id": "2d_shift32_15d_1024",
+        "label": "Decoupled 2D-RoPE + Shift (Ours, 1-15d, T=1024, k=32)",
+        "pos_mode": "2d_rope",
+        "k_shift": 32,
+        "final_loss": 0.00597,
+        "train_sec": 352.24
+      },
+      "pooled_seen_8_15d": {
+        "passed": 417,
+        "n": 600,
+        "accuracy": 69.5,
+        "wilson_95_ci": [
+          65.7,
+          73.1
+        ]
+      },
+      "pooled_unseen_16_40d": {
+        "passed": 977,
+        "n": 1200,
+        "accuracy": 81.42,
+        "wilson_95_ci": [
+          79.1,
+          83.5
+        ]
+      },
+      "pooled_unseen_16_50d": {
+        "passed": 1037,
+        "n": 1600,
+        "accuracy": 64.81,
+        "wilson_95_ci": [
+          62.4,
+          67.1
+        ]
+      },
+      "per_length": {
+        "8": {
+          "digits": 8,
+          "n": 200,
+          "passed": 108,
+          "accuracy": 54.0,
+          "wilson_95_ci": [
+            47.1,
+            60.8
+          ],
+          "elapsed_sec": 1.99
+        },
+        "12": {
+          "digits": 12,
+          "n": 200,
+          "passed": 137,
+          "accuracy": 68.5,
+          "wilson_95_ci": [
+            61.8,
+            74.5
+          ],
+          "elapsed_sec": 1.53
+        },
+        "15": {
+          "digits": 15,
+          "n": 200,
+          "passed": 172,
+          "accuracy": 86.0,
+          "wilson_95_ci": [
+            80.5,
+            90.1
+          ],
+          "elapsed_sec": 2.02
+        },
+        "16": {
+          "digits": 16,
+          "n": 200,
+          "passed": 184,
+          "accuracy": 92.0,
+          "wilson_95_ci": [
+            87.4,
+            95.0
+          ],
+          "elapsed_sec": 3.12
+        },
+        "20": {
+          "digits": 20,
+          "n": 200,
+          "passed": 180,
+          "accuracy": 90.0,
+          "wilson_95_ci": [
+            85.1,
+            93.4
+          ],
+          "elapsed_sec": 3.89
+        },
+        "25": {
+          "digits": 25,
+          "n": 200,
+          "passed": 184,
+          "accuracy": 92.0,
+          "wilson_95_ci": [
+            87.4,
+            95.0
+          ],
+          "elapsed_sec": 3.71
+        },
+        "30": {
+          "digits": 30,
+          "n": 200,
+          "passed": 170,
+          "accuracy": 85.0,
+          "wilson_95_ci": [
+            79.4,
+            89.3
+          ],
+          "elapsed_sec": 5.5
+        },
+        "35": {
+          "digits": 35,
+          "n": 200,
+          "passed": 156,
+          "accuracy": 78.0,
+          "wilson_95_ci": [
+            71.8,
+            83.2
+          ],
+          "elapsed_sec": 8.06
+        },
+        "40": {
+          "digits": 40,
+          "n": 200,
+          "passed": 103,
+          "accuracy": 51.5,
+          "wilson_95_ci": [
+            44.6,
+            58.3
+          ],
+          "elapsed_sec": 9.16
+        },
+        "45": {
+          "digits": 45,
+          "n": 200,
+          "passed": 60,
+          "accuracy": 30.0,
+          "wilson_95_ci": [
+            24.1,
+            36.7
+          ],
+          "elapsed_sec": 11.37
+        },
+        "50": {
+          "digits": 50,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 11.7
+        },
+        "55": {
+          "digits": 55,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 12.22
+        },
+        "60": {
+          "digits": 60,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 14.38
+        },
+        "70": {
+          "digits": 70,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 23.93
+        },
+        "80": {
+          "digits": 80,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 30.33
+        },
+        "100": {
+          "digits": 100,
+          "n": 200,
+          "passed": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            1.9
+          ],
+          "elapsed_sec": 35.26
+        }
+      }
+    }
+  }
+}
