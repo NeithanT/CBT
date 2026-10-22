@@ -1,0 +1,8 @@
+timestamp,model_name,overall_acc,in_distribution_acc,moderate_extrap_acc,extreme_extrap_acc,zero_counting_acc,json_log
+20260929_220201,model_1_final_0h,0.00%,0.00%,0.00%,0.00%,0.00%,20260929_220201_model_1_final_0h.json
+20260930_210156,Model 2: Subword BPE Tokenizer (100% Math with Word-CoT) Final (400M tokens),0.0%,0.0%,0.0%,0.0%,0.0%,20260930_210156_model_2:_subword_bpe_tokenizer_100%_math_with_word-cot_final_400m_tokens.json
+20260930_215943,Model 3: Subword BPE (50% Math Word-CoT + 50% Philosophy Text) Final (400M tokens),0.0%,0.0%,0.0%,0.0%,0.0%,20260930_215943_model_3:_subword_bpe_50%_math_word-cot_plus_50%_philosophy_text_final_400m_tokens.json
+20261001_002609,Model 4 (Place-Value RL),0.0%,0.0%,0.0%,0.0%,0.0%,20261001_002609_model_4_place-value_rl.json
+20261001_012559,Model 1: Character Math Tokenizer (100% Math with Scratchpad) Final (400M tokens),0.0%,0.0%,0.0%,0.0%,0.0%,20261001_012559_model_1:_character_math_tokenizer_100%_math_with_scratchpad_final_400m_tokens.json
+20261005_215234,Model 1: Character Math Tokenizer (100% Math with Scratchpad) Final (400M tokens),0.0%,0.0%,0.0%,0.0%,0.0%,20261005_215234_model_1:_character_math_tokenizer_100%_math_with_scratchpad_final_400m_tokens.json
+20261006_001503,Model 1: Character Math Tokenizer (100% Math with Scratchpad) Final (400M tokens),0.0%,0.0%,0.0%,0.0%,0.0%,20261006_001503_model_1:_character_math_tokenizer_100%_math_with_scratchpad_final_400m_tokens.json

@@ -1,0 +1,21 @@
+{
+  "model_type": "unified_200k",
+  "vocab_size": 111,
+  "block_size": 512,
+  "n_layer": 4,
+  "n_head": 4,
+  "n_embd": 64,
+  "n_recur": 3,
+  "dropout": 0.0,
+  "bias": false,
+  "pos_emb_type": "rope_2d",
+  "rope_theta": 10000.0,
+  "max_coords": 2048,
+  "k_rand_shift": 16,
+  "parameters": {
+    "total": 204736,
+    "non_embedding": 197632,
+    "target": "~200k",
+    "status": "[OK] ~200k parameters with 2D-RoPE and R=3 recurrence"
+  }
+}

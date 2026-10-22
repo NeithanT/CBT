@@ -1,0 +1,80 @@
+{
+  "tokenizer": {
+    "special_tokens": ["<PAD>", "<BOS>", "<EOS>", "<UNK>", "<THINK>", "</THINK>"],
+    "digits": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    "operators": ["+", "-", "*", "/", "^", "%", "(", ")"],
+    "separators": ["=", " ", "\n"]
+  },
+  "model": {
+    "block_size": 512,
+    "n_layer": 6,
+    "n_head": 8,
+    "n_embd": 512,
+    "dropout": 0.05,
+    "bias": false,
+    "pos_emb_type": "rope"
+  },
+  "training": {
+    "epochs": 5,
+    "batch_size": 64,
+    "lr": 0.001,
+    "n_train": 10000,
+    "n_val": 1000,
+    "mask_prompt": true,
+    "save_path": "math_gpt.pt",
+    "log_interval": 50,
+    "seed": 42
+  },
+  "testing": {
+    "model_settings": {
+      "block_size": 16,
+      "n_layer": 2,
+      "n_head": 2,
+      "n_embd": 32,
+      "dropout": 0.0
+    },
+    "seed": 42,
+    "sample_equations": [
+      "123+456=579",
+      "10*5=50",
+      "100-35=65",
+      "12/4=3",
+      "2^3=8"
+    ],
+    "edge_cases": [
+      "0+0=0",
+      "1-1=0",
+      "0*99=0"
+    ],
+    "invalid_expressions": [
+      "12a+3b",
+      "hello_world"
+    ],
+    "benchmark_prompts": [
+      {"prompt": "12+15=", "expected": "27"},
+      {"prompt": "48+52=", "expected": "100"},
+      {"prompt": "120+80=", "expected": "200"},
+      {"prompt": "99-33=", "expected": "66"},
+      {"prompt": "50-25=", "expected": "25"},
+      {"prompt": "6*7=", "expected": "42"},
+      {"prompt": "9*9=", "expected": "81"},
+      {"prompt": "15*4=", "expected": "60"},
+      {"prompt": "2^3=", "expected": "8"},
+      {"prompt": "3^3=", "expected": "27"}
+    ]
+  },
+  "t4_hardware": {
+    "gpu_name": "NVIDIA T4",
+    "gpu_count": 2,
+    "vram_per_gpu_gb": 16.0,
+    "precision": "fp16",
+    "use_amp": true,
+    "amp_dtype": "float16",
+    "cudnn_benchmark": true,
+    "batch_size_per_gpu": 64,
+    "global_batch_size": 128,
+    "ddp_backend": "nccl",
+    "pin_memory": true,
+    "grad_clip_norm": 1.0
+  }
+}

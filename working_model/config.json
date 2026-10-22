@@ -1,0 +1,28 @@
+{
+  "model_type": "hrm_rope",
+  "vocab_size": 32,
+  "block_size": 512,
+  "n_embd": 256,
+  "n_head": 4,
+  "d_ffn": 768,
+  "n_fast_steps": 2,
+  "n_slow_cycles": 2,
+  "dropout": 0.0,
+  "bias": false,
+  "rope_theta": 10000.0,
+  "max_coords": 2048,
+  "k_rand_shift": 32,
+  "parameters": {
+    "total": 1582336,
+    "non_embedding": 1574144,
+    "ceiling": 2000000,
+    "status": "[PASS] Strictly < 2M"
+  },
+  "benchmark_summary": {
+    "overall_accuracy": "91.67%",
+    "in_distribution_1_to_12_digits": "100.0%",
+    "moderate_extrapolation_14_to_16_digits": "66.7%",
+    "extreme_extrapolation_18_to_20_digits": "100.0%",
+    "zero_counting_and_cascade_carry_20_digits": "100.0%"
+  }
+}

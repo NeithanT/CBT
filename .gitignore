@@ -1,0 +1,58 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Model Weights and Checkpoints
+*.pt
+*.pth
+*.bin
+*.ckpt
+*.safetensors
+*.onnx
+checkpoints/
+champion_model/checkpoints/
+champion_model/**/checkpoints/
+dense_model/checkpoints/
+tool_model/checkpoints/
+working_model/checkpoints/
+
+# Deterministic Large Data Caches
+data/*.pt
+data/shared_math_pairs.pt
+data/cache/
+
+# Archives and Large Zip Bundles
+archive/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Nested Repositories
+HRM-Text/
+
+# Testing, Profiling and Caches
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+wandb/
+
+# OS and Editor Artifacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

@@ -1,0 +1,6 @@
+id,name,pos_emb_type,n_recur,k_rand_shift,total_params,non_embedding_params,train_time_sec,final_loss,in_distribution,mod_extrapolation,ext_extrapolation,cascade_carry,overall_accuracy,passed_cases,total_cases
+model_1d_dense,"Model 1: 1D-RoPE Baseline (R=1, Shift=0)",rope,1,0,100672,98944,171.55,0.18636,50.0,0.0,0.0,0.0,21.428571428571427,3,14
+model_1d_rec3,"Model 2: 1D-RoPE + Recurrence (R=3, Shift=0)",rope,3,0,100672,98944,410.62,0.13532,33.33333333333333,0.0,0.0,0.0,14.285714285714285,2,14
+model_2d_dense,"Model 3: 2D-RoPE Only (R=1, Shift=0)",rope_2d,1,0,100672,98944,264.05,0.00108,100.0,100.0,33.33333333333333,50.0,78.57142857142857,11,14
+model_2d_rec3,"Model 4: 2D-RoPE + Recurrence (R=3, Shift=0)",rope_2d,3,0,100672,98944,552.35,0.0017,100.0,100.0,33.33333333333333,50.0,78.57142857142857,11,14
+model_2d_rec3_shift16,Model 5: ScaledGPT Champion (2D-RoPE + R=3 + Shift=16),rope_2d,3,16,100672,98944,1220.93,0.00169,100.0,100.0,66.66666666666666,0.0,78.57142857142857,11,14

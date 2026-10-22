@@ -1,0 +1,4 @@
+n_samples,steps,train_duration_sec,final_train_loss,train_fit_acc,in_distribution_acc,moderate_extrap_acc,extreme_extrap_acc,cascade_carry_acc,overall_test_acc
+10,250,152.9,0.0366,90.0,0.0,0.0,0.0,0.0,0.0
+100,400,589.4,0.0494,50.0,0.0,0.0,0.0,0.0,0.0
+1000,600,1738.4,0.0099,90.0,50.0,66.67,0.0,0.0,35.71

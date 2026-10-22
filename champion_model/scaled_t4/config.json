@@ -1,0 +1,31 @@
+{
+  "model_type": "scaled_t4",
+  "vocab_size": 115,
+  "block_size": 1024,
+  "n_layer": 6,
+  "n_head": 8,
+  "n_embd": 512,
+  "n_recur": 3,
+  "dropout": 0.0,
+  "bias": false,
+  "pos_emb_type": "rope_2d",
+  "rope_theta": 10000.0,
+  "max_coords": 4096,
+  "k_rand_shift": 32,
+  "effective_depth": 18,
+  "head_dim": 64,
+  "parameters": {
+    "total": 18953216,
+    "non_embedding": 18887680,
+    "target_scale": "~10M to ~20M",
+    "status": "[OK] Scaled 18.95M parameter architecture with 2D-RoPE and R=3 recurrence"
+  },
+  "t4_optimization": {
+    "precision": "FP16 AMP (torch.amp.autocast)",
+    "scaler": "torch.amp.GradScaler('cuda')",
+    "sdpa": "Scaled Dot-Product Attention with O(1) activation memory",
+    "distributed": "PyTorch DistributedDataParallel (DDP) across 2x T4 GPUs",
+    "bfloat16_allowed": false,
+    "tf32_allowed": false
+  }
+}

@@ -1,0 +1,19 @@
+# Research Environment Requirements for 2x NVIDIA T4 GPUs (Turing sm_75)
+# Core Deep Learning Framework
+torch>=2.2.0
+tiktoken>=0.5.0
+
+# Numerical & Data Science
+numpy>=1.24.0
+scipy>=1.10.0
+pandas>=2.0.0
+
+# Experiment Tracking & Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+tensorboard>=2.14.0
+tqdm>=4.65.0
+
+# Interactive Research & Notebooks
+jupyterlab>=4.0.0
+ipywidgets>=8.0.0
