@@ -44,10 +44,10 @@ pipeline_tag: text-generation
 
 **ScaledGPT** is an autoregressive Transformer model engineered to overcome the empirical limits of standard self-attention on sequential state machines and multi-tool agent execution.
 
-By combining **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** with **Weight-Tied Recurrent Depth ($R=3$)**, ScaledGPT achieves:
-- **100.0% Exact Match Accuracy** on 1 to 50 digit column arithmetic length extrapolation (including 50-digit cascading carry $99\\dots99 + 1$).
+By combining **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** with **Weight-Tied Recurrent Depth (R = 3)**, ScaledGPT achieves:
+- **100.0% Exact Match Accuracy** on 1 to 50 digit column arithmetic length extrapolation (including 50-digit cascading carry 99...99 + 1).
 - **100.0% Multi-Tool Routing Accuracy** across 9 tool schemas (single-tool, multi-tool chaining, nested JSON schemas, and error recovery).
-- **Dual NVIDIA T4 GPU Efficiency**: Native Turing `sm_75` FP16 AMP and SDPA memory-efficient attention.
+- **Dual NVIDIA T4 GPU Efficiency**: Native Turing sm_75 FP16 AMP and SDPA memory-efficient attention.
 
 ---
 
@@ -57,14 +57,14 @@ By combining **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** with **Weight
 | :--- | :--- |
 | **Total Parameters** | 18,944,512 (~18.95M) |
 | **Non-Embedding Parameters** | 18,887,680 (~18.89M) |
-| **Physical Layers ($L$)** | 6 |
-| **Recurrent Passes ($R$)** | 3 (Effective Depth = 18 layers) |
-| **Hidden Dimension ($d_{\\text{model}}$)** | 512 |
-| **Attention Heads ($H$)** | 8 (Head dimension = 64) |
-| **Max Sequence Length ($T$)** | 1024 |
-| **Positional Embedding** | Decoupled 2D-RoPE ($d/2$ macro column, $d/2$ micro step) |
+| **Physical Layers (L)** | 6 |
+| **Recurrent Passes (R)** | 3 (Effective Depth = 18 layers) |
+| **Hidden Dimension (d_model)** | 512 |
+| **Attention Heads (H)** | 8 (Head dimension = 64) |
+| **Max Sequence Length (T)** | 1024 |
+| **Positional Embedding** | Decoupled 2D-RoPE (d/2 macro column, d/2 micro step) |
 | **Vocabulary Size** | 115 (Special discourse markers + ASCII characters) |
-| **Weight Tying** | $W_{\\text{te}} == W_{\\text{lm\\_head}}$ |
+| **Weight Tying** | W_te == W_lm_head |
 
 ---
 
@@ -76,7 +76,7 @@ By combining **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** with **Weight
 | **16-25 Digit Intermediate Extrapolation** | Exact Answer Match | 100.0% (6/6) | [PASS] |
 | **30-40 Digit High Extrapolation** | Exact Answer Match | 100.0% (4/4) | [PASS] |
 | **45-50 Digit Ultra Extrapolation** | Exact Answer Match | 100.0% (4/4) | [PASS] |
-| **50-Digit Cascade Carry ($99\\dots99 + 1$)** | 50 Sequential Transitions | 100.0% (1/1) | [PASS] |
+| **50-Digit Cascade Carry (99...99 + 1)** | 50 Sequential Transitions | 100.0% (1/1) | [PASS] |
 | **Multi-Tool Routing Suite (9 Schemas)** | Correct Tool Selection | 100.0% (26/26) | [PASS] |
 | **Multi-Tool Exact Argument Extraction** | Exact Parameter Copy Rate | 96.2% (25/26) | [PASS] |
 
