@@ -18,15 +18,14 @@ from typing import Dict, List, Tuple, Any
 
 import torch
 
-# Ensure repository root and working_model imports
+# Ensure repository root and src imports
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WORKING_MODEL_DIR = os.path.join(REPO_ROOT, "working_model")
-sys.path.insert(0, WORKING_MODEL_DIR)
+sys.path.insert(0, os.path.join(REPO_ROOT, "src"))
 sys.path.insert(0, REPO_ROOT)
 
-from working_model.model import HRMRoPE, HRMRoPEConfig
-from working_model.tokenizer import MathTokenizer
-from working_model.arithmetic import extract_scratchpad_answer
+from src.models.hrm_rope import HRMRoPE, HRMRoPEConfig
+from src.tokenizer import MathTokenizer
+from src.arithmetic import extract_scratchpad_answer
 
 
 def generate_random_number(num_digits: int, rng: random.Random) -> int:

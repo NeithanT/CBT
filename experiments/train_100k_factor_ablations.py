@@ -25,10 +25,10 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from dense_model.model import MathGPT, GPTConfig
+from champion_model.math_model.model import MathGPT, GPTConfig
 from src.tokenizer import MathTokenizer
 from src.arithmetic import extract_scratchpad_answer
-from dense_model.train_and_eval import (
+from champion_model.math_model.train_and_eval import (
     EXTRAPOLATION_BENCHMARK,
     load_training_equations,
     encode_batch,

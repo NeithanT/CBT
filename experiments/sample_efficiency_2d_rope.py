@@ -27,7 +27,7 @@ from src.models.hrm_rope import HRMRoPE, HRMRoPEConfig
 from src.arithmetic import format_addition_char_scratchpad, extract_scratchpad_answer
 from src.dataset import get_or_generate_shared_math_pairs
 from training.trainer import encode_texts_to_batch
-from working_model.inference import EXTRAPOLATION_BENCHMARK
+from champion_model.math_model.train_and_eval import EXTRAPOLATION_BENCHMARK
 
 
 def load_sample_efficiency_datasets(
