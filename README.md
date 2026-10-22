@@ -136,33 +136,77 @@ pip install -r requirements.txt
 
 ## 5. Quickstart & Interactive Inference
 
-### 1. Run Interactive CLI (ScaledGPT Champion)
+Inference is designed to be directly human-executable via the research orchestrator or Python CLI.
 
-Launch the interactive console with the champion checkpoint:
+### 1. Execute a Single Arithmetic Problem
+Test high-digit arithmetic directly from the command line:
 ```bash
-python champion_model/scaled_t4/interactive.py --ckpt champion_model/scaled_t4/checkpoints/champion_final.pt
+./run_t4_research.sh interact --prompt "123+456="
+```
+Formatted Human-Readable Terminal Output:
+```text
+--------------------------------------------------------------------------------
+Problem:    123+456 = ?
+Scratchpad: (0+3+6)=09(0+2+5)=07(0+1+4)=05
+Answer:     579
+Validation: [PASS] (Expected: 579)
+--------------------------------------------------------------------------------
+[RAW TOKENS] <BOS>123+456=<THINK>(0+3+6)=09(0+2+5)=07(0+1+4)=05</THINK>=579<EOS>
 ```
 
-### 2. High-Digit Arithmetic Extrapolation
-Enter any multi-digit addition equation up to 50 digits:
-```text
->>> 12345678901234567890+98765432109876543210=
+### 2. Execute a Natural Language Tool Query
+Test multi-tool routing and mock execution:
+```bash
+./run_t4_research.sh interact --prompt "What is the weather in Rome?"
 ```
-The model generates the step-by-step column scratchpad and exact answer:
+Formatted Human-Readable Terminal Output:
 ```text
-=111111111011111111100
-[PASS] Exact match verification succeeded.
+--------------------------------------------------------------------------------
+Reasoning:   The user requests current weather information. I will query the get_weather tool.
+Tool Call:   get_weather(city="Rome")
+Tool Result: {"temp": 22, "condition": "Sunny", "city": "Rome"}
+Response:    The weather in Rome is currently Sunny with a temperature of 22 degrees Celsius.
+--------------------------------------------------------------------------------
 ```
 
-### 3. Multi-Tool Function Calling
-Enter natural language queries across the 9 supported tool schemas:
-```text
->>> What is the weather in Rome?
-Output: <THINK>Routing to weather</THINK><CALL>get_weather(city="Rome")</CALL>
-
->>> Query top 5 active records in engineering
-Output: <THINK>Routing to database</THINK><CALL>database_query(filter={"department": "engineering", "status": "active"}, options={"limit": 5, "sort": "desc"})</CALL>
+### 3. Launch the Interactive Chat Terminal
+Enter an ongoing dialogue session:
+```bash
+./run_t4_research.sh interact
 ```
+```text
+================================================================================
+SCALEDGPT CHAMPION (~18.95M) INTERACTIVE TERMINAL
+Type an arithmetic equation (e.g. '12345+67890=') or a natural question.
+Type 'exit' or 'quit' to terminate.
+================================================================================
+User >> 
+```
+
+---
+
+## 6. Model Weights & Hugging Face Upload
+
+### Downloading Pretrained Champion Weights
+To download the champion weights from Hugging Face:
+```bash
+python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='<username>/scaled-gpt-recurrent-2d-rope', filename='champion_final.pt', local_dir='champion_model/scaled_t4/checkpoints')"
+```
+
+### Uploading Your Trained Weights to Hugging Face
+To publish your local weights and model card to Hugging Face:
+```bash
+python benchmarks/upload_to_hf.py \
+  --repo_id "<username>/scaled-gpt-recurrent-2d-rope" \
+  --token "<your-hf-token>"
+```
+This utility automatically packages:
+- Model weights (`champion_final.pt`, ~75.8 MB)
+- Model card metadata (`README.md` with benchmark results)
+- Architecture implementation (`model.py`)
+- Tokenizer (`tokenizer.py`)
+- Configuration hyperparameters (`config.json`)
+- Interactive CLI (`interactive.py`)
 
 ---
 
