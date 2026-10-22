@@ -231,7 +231,6 @@ If you use this codebase or architecture in your research, please cite:
 @article{vargas2026attention,
   title={Attention Is Not All You Need for AGI: Empirical Limits of Pure Self-Attention on Algorithmic Length Generalization},
   author={Vargas, Neithan},
-  journal={DeepMind / TEC Advanced Research},
   year={2026}
 }
 ```
