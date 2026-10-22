@@ -56,3 +56,11 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# LaTeX compilation artifacts
+*.aux
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
