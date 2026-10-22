@@ -146,6 +146,50 @@ def mock_execute_tool(call_text: str) -> str:
     return json.dumps({"status": "executed", "call": call_text})
 
 
+def print_human_readable_output(text: str, is_math: bool = False):
+    """Formats internal model output into clean, human-readable terminal blocks."""
+    print("\n" + "-" * 80)
+    if is_math:
+        m = re.search(r"(?:<BOS>)?(.*?)=(?:<THINK>)?(.*?)(?:</THINK>=)(.*?)(?:<EOS>|$)", text)
+        if m:
+            problem = m.group(1).strip()
+            scratch = m.group(2).strip()
+            ans = m.group(3).strip()
+            print(f"Problem:    {problem} = ?")
+            print(f"Scratchpad: {scratch}")
+            print(f"Answer:     {ans}")
+            try:
+                if "+" in problem:
+                    parts = problem.split("+")
+                    if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                        expected = int(parts[0]) + int(parts[1])
+                        status = "[PASS]" if str(expected) == ans else "[FAIL]"
+                        print(f"Validation: {status} (Expected: {expected})")
+            except Exception:
+                pass
+        else:
+            print(f"Result:     {text}")
+    else:
+        think_m = re.search(r"<THINK>(.*?)</THINK>", text)
+        call_m = re.search(r"<CALL>(.*?)</CALL>", text)
+        result_m = re.search(r"<RESULT>(.*?)</RESULT>", text)
+        answer_m = re.search(r"<ANSWER>(.*?)</ANSWER>", text)
+
+        if think_m:
+            print(f"Reasoning:   {think_m.group(1).strip()}")
+        if call_m:
+            print(f"Tool Call:   {call_m.group(1).strip()}")
+        if result_m:
+            print(f"Tool Result: {result_m.group(1).strip()}")
+        if answer_m:
+            print(f"Response:    {answer_m.group(1).strip()}")
+        if not any([think_m, call_m, result_m, answer_m]):
+            print(f"Response:    {text}")
+
+    print("-" * 80)
+    print(f"[RAW TOKENS] {text}\n", flush=True)
+
+
 def run_math_prompt(model: ScaledGPT, tokenizer: ScaledTokenizer, prompt: str, device: torch.device) -> str:
     """Processes a multi-digit arithmetic expression."""
     clean_prompt = prompt.strip()
@@ -160,7 +204,7 @@ def run_math_prompt(model: ScaledGPT, tokenizer: ScaledTokenizer, prompt: str, d
         out = model.generate(x, max_new_tokens=700, temperature=0.0, stop_tokens=[tokenizer.eos_id])
 
     gen_text = tokenizer.decode(out[0].tolist(), skip_special=False)
-    print(f"\n[RAW OUTPUT] {gen_text}\n", flush=True)
+    print_human_readable_output(gen_text, is_math=True)
     return gen_text
 
 
@@ -192,13 +236,14 @@ def run_dialogue_prompt(model: ScaledGPT, tokenizer: ScaledTokenizer, user_input
     else:
         full_dialogue = gen_text
 
-    print(f"\n[RAW OUTPUT] {full_dialogue}\n", flush=True)
+    print_human_readable_output(full_dialogue, is_math=False)
     return full_dialogue
 
 
 def main():
     parser = argparse.ArgumentParser(description="ScaledGPT Interactive CLI")
     parser.add_argument("--ckpt", type=str, default="champion_model/scaled_t4/checkpoints/champion_final.pt", help="Path to checkpoint")
+    parser.add_argument("--prompt", type=str, default=None, help="Execute a single prompt and exit")
     parser.add_argument("--threads", type=int, default=8, help="Number of CPU threads for inference")
     args = parser.parse_args()
 
@@ -238,6 +283,15 @@ def main():
         print(f"[WARN] Checkpoint not found in candidate paths. Running with initialized weights.")
 
     model.eval()
+
+    if args.prompt:
+        user_input = args.prompt.strip()
+        is_math = bool(re.match(r"^[\d\s\+\-\=]+$", user_input) and ("+" in user_input or "-" in user_input))
+        if is_math:
+            run_math_prompt(model, tokenizer, user_input, device)
+        else:
+            run_dialogue_prompt(model, tokenizer, user_input, device)
+        return
 
     print("\n" + "=" * 80)
     print("SCALEDGPT (~18.95M) INTERACTIVE TERMINAL")

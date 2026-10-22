@@ -130,16 +130,69 @@ def interactive_session(model: MathGPT, tokenizer: Any, device: torch.device):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MathGPT Interactive Inference")
-    parser.add_argument("--checkpoint", type=str, default="checkpoints/baseline/math_gpt.pt", help="Path to checkpoint")
+    parser = argparse.ArgumentParser(description="ScaledGPT & MathGPT Interactive Inference")
+    parser.add_argument("--checkpoint", type=str, default=None, help="Path to checkpoint")
     parser.add_argument("--prompt", type=str, default=None, help="Single prompt execution")
-    parser.add_argument("--show_attention", action="store_true", help="Display ASCII attention map")
+    parser.add_argument("--show_attention", action="store_true", help="Display ASCII attention map (MathGPT only)")
     parser.add_argument("--layer", type=int, default=0, help="Attention layer to visualize")
     parser.add_argument("--head", type=int, default=0, help="Attention head to visualize")
     args = parser.parse_args()
 
-    # Search fallback if checkpoint not at default
-    ckpt = args.checkpoint
+    champion_ckpt = os.path.join(ROOT_DIR, "champion_model", "scaled_t4", "checkpoints", "champion_final.pt")
+
+    # If no specific checkpoint is passed and champion model exists, delegate to ScaledGPT Champion CLI
+    if args.checkpoint is None and os.path.exists(champion_ckpt):
+        from champion_model.scaled_t4.interactive import (
+            ScaledTokenizer,
+            ScaledGPTConfig,
+            ScaledGPT,
+            run_math_prompt,
+            run_dialogue_prompt,
+        )
+        import re
+
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        tokenizer = ScaledTokenizer()
+        config = ScaledGPTConfig(vocab_size=tokenizer.vocab_size)
+        model = ScaledGPT(config, tokenizer=tokenizer).to(device)
+
+        ckpt = torch.load(champion_ckpt, map_location=device, weights_only=False)
+        model.load_state_dict(ckpt["model_state_dict"])
+        model.eval()
+        print(f"[INFO] Loaded ScaledGPT Champion Model from {champion_ckpt}")
+
+        if args.prompt:
+            p = args.prompt.strip()
+            is_math = bool(re.match(r"^[\d\s\+\-\=]+$", p) and ("+" in p or "-" in p))
+            if is_math:
+                run_math_prompt(model, tokenizer, p, device)
+            else:
+                run_dialogue_prompt(model, tokenizer, p, device)
+            return
+
+        print("\n" + "=" * 80)
+        print("SCALEDGPT CHAMPION (~18.95M) INTERACTIVE TERMINAL")
+        print("Type an arithmetic equation (e.g. '12345+67890=') or a natural question.")
+        print("Type 'exit' or 'quit' to terminate.")
+        print("=" * 80 + "\n")
+
+        while True:
+            try:
+                user_input = input("User >> ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print("\n[INFO] Exiting interactive CLI.")
+                break
+            if not user_input or user_input.lower() in ["exit", "quit"]:
+                break
+            is_math = bool(re.match(r"^[\d\s\+\-\=]+$", user_input) and ("+" in user_input or "-" in user_input))
+            if is_math:
+                run_math_prompt(model, tokenizer, user_input, device)
+            else:
+                run_dialogue_prompt(model, tokenizer, user_input, device)
+        return
+
+    # Fallback to legacy MathGPT checkpoint loader
+    ckpt = args.checkpoint or os.path.join(ROOT_DIR, "checkpoints", "baseline", "math_gpt.pt")
     if not os.path.exists(ckpt):
         for candidate in [
             os.path.join(ROOT_DIR, "checkpoints", "baseline", "math_gpt.pt"),
