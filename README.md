@@ -1,37 +1,33 @@
-# Attention Is Not All You Need for AGI: Empirical Limits of Pure Self-Attention on Algorithmic Length Generalization
+# 2D Embeddings for Length Generalization in Character-Based Transformers (CBT)
 
 [![Paper](https://img.shields.io/badge/Paper-RESEARCH__PAPER.md-blue)](RESEARCH_PAPER.md)
 [![Status](https://img.shields.io/badge/Status-Reproducible%20%5BPASS%5D-brightgreen)](#)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Neithanvarvas%2FCBT-orange)](https://huggingface.co/Neithanvarvas/CBT)
 
-**Primary Scientific Reference**: [RESEARCH_PAPER.md](RESEARCH_PAPER.md)  
+**Primary Scientific Reference**: [RESEARCH_PAPER.md](RESEARCH_PAPER.md) | [RESEARCH_PAPER.pdf](RESEARCH_PAPER.pdf)  
 **Target Hardware**: 2x NVIDIA T4 GPUs (Turing `sm_75`, 16 GB GDDR6 each, FP16 AMP)  
-**Evaluated Scope**: 1 to 50 Digit Arithmetic Extrapolation & Multi-Tool Agent Routing
+**Evaluated Scope**: 1 to 100 Digit Arithmetic Extrapolation (Structured & Random Multi-Carry) & Multi-Tool Agent Routing
 
 ---
 
-## 1. Executive Summary & Breakthrough Findings
+## 1. Executive Summary & Findings
 
-Can an autoregressive language model internalize the underlying sequential state machine of arithmetic when trained up to n digits, and extrapolate that algorithm invariantly to n + x digits?
+We study whether a small autoregressive character-level language model can extrapolate column-aligned multi-digit integer addition beyond the digit lengths seen in training when provided with rule-assigned two-dimensional (2D) coordinates $(p, \tau)$.
 
-Standard autoregressive Transformers rely on soft pairwise routing across static depth L. When extrapolating beyond their training horizon (n > 12 digits), standard models fail catastrophically (0.0% extrapolation accuracy) due to:
-1. **Positional Phase Drift**: Monotonic 1D Rotary Position Embeddings (1D-RoPE) rotate query and key representations out of phase as context length T grows.
-2. **Bounded Sequential Depth**: Static feed-forward layers cannot propagate cascading carry transitions (99...99 + 1) without state decay.
+Small autoregressive Transformers trained from scratch on 1–12 digit addition with 1D Rotary Position Embeddings (1D-RoPE) fall to **0.0% accuracy** on unseen 18- to 20-digit sums (after scoring 4.6–18.7% on moderate 14–16 digit extrapolation). In **Character-Based Transformer (CBT)**, tokens are atomic ASCII characters plus 14 structural control tags positioned on a 2D coordinate grid $(p, \tau)$ via **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** and **Weight-Tied Recurrent Depth ($R = 3$)** (where our 100k factor ablation indicates that 2D coordinates account for the length-generalization gain while recurrence provides no measurable benefit for addition).
 
-### The Solution: Decoupled 2D-RoPE + Recurrent Weight-Tied Depth
+### Key Results Matrix (Greedy Decoding)
 
-To solve these limitations, this repository introduces two complementary architectural inductive biases:
-1. **Decoupled 2D Rotary Position Embeddings (2D-RoPE)**: Splits head dimension d_k into orthogonal decimal-place (Delta p = 0) and template-step (tau) coordinates, enforcing invariant column matching independent of sequence length.
-2. **Weight-Tied Recurrent Depth (R = 3)**: Unrolls physical Transformer layers recurrently across R = 3 passes per step with residual scaling, providing deep multi-step state routing at zero parameter cost.
+| Architecture | Total Params | Effective Depth | In-Dist (1–12/15d) | Unseen 16–40d Random ($n=180$) | Unseen 16–50d Random ($n=240$) | 50-Digit Cascade ($99\dots99 + 1$) | Multi-Tool Routing |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Standard Transformer (1D-RoPE)** | 18.91M | 6 layers | 98.4% (1–12d) | 0.0% (18–20d) | N/A (512-tok limit) | N/A (512-tok limit) | N/A |
+| **HRM-RoPE (Decoupled 2D-RoPE)** | 1.56M | 8 cycles | 100.0% (1–12d) | 100.0% (18–20d) | N/A (512-tok limit) | 100.0% (20d) | N/A |
+| **CBT-100k ($L=2, R=3$)** | 100,672 | 6 layers (unrolled) | 100.0% (1–12d) | 100.0% (14–20d) | N/A (512-tok limit) | 100.0% (20d) | N/A |
+| **CBT-200k ($L=4, R=3$)** | 197.8k | 12 layers (unrolled) | 100.0% (1–12d) | 100.0% (14–20d) | N/A (512-tok limit) | 100.0% (20d) | 100.0% (50/50) |
+| **CBT-18.95M (`champion_final.pt`)** | **18.95M** | **18 layers (unrolled)** | **100.0% (1–15d)** | **100.0% (180/180)** | **98.8% (237/240)** | **100.0% (20/20 Struct)** | **100.0% (26/26) / 88.9% OOD** |
 
-### Key Results Matrix
-
-| Architecture | Total Params | Effective Depth | In-Distribution (1–12 Digits) | Extrapolation (14–20 Digits) | 50-Digit Cascade Carry (99...99 + 1) | Multi-Tool Routing |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Standard Transformer (1D-RoPE)** | 18.91M | 6 layers | 33.3% | 0.0% | 0.0% | 12.0% |
-| **HRM-RoPE Baseline** | 1.57M | 8 cycles | 100.0% | 91.7% | 100.0% (20d) | N/A |
-| **100k Recurrent 2D-RoPE** | 100,672 | 6 layers (unrolled) | 100.0% | 100.0% | 100.0% (20d) | 100.0% (50/50) |
-| **Character Based Transformer (CBT)** | **18.95M** | **18 layers (unrolled)** | **100.0% [PASS]** | **100.0% [PASS]** | **100.0% (50d) [PASS]** | **100.0% (26/26) [PASS]** |
+- **Shift-Masking Horizon ($p_{\max} = N_{\text{train}} + k = 15 + 32 = 47$)**: Across the 315-problem random multi-carry sweep from 16 to 100 digits (`benchmarks/evaluate_random_16_to_100d.py`), **CBT-18.95M** achieves **100.0% (180/180; 95% Wilson CI `[97.9, 100.0]%`)** across 16–40 digits ($p \le 40$), **93.3–96.7%** at 45–50 digits ($p \approx 47$), and **90.0% (18/20)** at 55 digits, before dropping at 60 digits (**45.0%**), 70 digits (**6.7%**), and 80–100 digits (**0.0%**) once macro column coordinates $p$ exceed the shifted training support.
+- **Zero-Shot OOD Tool Calling**: On 18 unseen OOD prompts, CBT-18.95M routes **88.9% (16/18)** to the intended tool and copies **50.0% (8/16)** of arguments with exact character match (68.8% exact or near-exact).
 
 ---
 
