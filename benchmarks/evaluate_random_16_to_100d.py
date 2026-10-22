@@ -7,11 +7,15 @@ internal scratchpad accuracy, 95% Wilson confidence intervals, and failure modes
 
 import json
 import math
+import os
 import random
+import sys
 import time
 from typing import Dict, List, Tuple, Any
 import torch
 import torch.nn.functional as F
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from champion_model.scaled_t4.model import ScaledGPT, ScaledGPTConfig, apply_2d_rope
 from champion_model.scaled_t4.tokenizer import ScaledTokenizer
