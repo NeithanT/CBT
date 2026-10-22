@@ -28,8 +28,8 @@ champion_model/
 |-- __init__.py                # Package exports
 |-- evaluate_all.py            # Unified evaluation runner
 |-- README.md                  # Champion model suite documentation
-|-- scaled_t4/                 # ScaledGPT (~18.95M Parameters, Dual T4 Champion)
-|   |-- model.py               # ScaledGPT architecture (2D-RoPE, R=3 unrolling)
+|-- scaled_t4/                 # Character Based Transformer (CBT, ~18.95M Parameters)
+|   |-- model.py               # CBT architecture (2D-RoPE, R=3 unrolling)
 |   |-- tokenizer.py           # ScaledTokenizer with tool schema support
 |   |-- dataset.py             # 1-50 digit curriculum & multi-tool dataset generator
 |   |-- interactive.py         # Live interactive CLI with mock tool execution

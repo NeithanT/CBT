@@ -184,7 +184,7 @@ def main():
                 return
 
             print("\n" + "=" * 80)
-            print("SCALEDGPT CHAMPION (~18.95M) INTERACTIVE TERMINAL")
+            print("CHARACTER BASED TRANSFORMER (CBT, ~18.95M) INTERACTIVE TERMINAL")
             print("Type an arithmetic equation (e.g. '12345+67890=') or a natural question.")
             print("Type 'exit' or 'quit' to terminate.")
             print("=" * 80 + "\n")

@@ -12,37 +12,37 @@
 
 ## 1. Executive Summary & Breakthrough Findings
 
-Can an autoregressive language model internalize the underlying sequential state machine of arithmetic when trained up to $n$ digits, and extrapolate that algorithm invariantly to $n + x$ digits?
+Can an autoregressive language model internalize the underlying sequential state machine of arithmetic when trained up to n digits, and extrapolate that algorithm invariantly to n + x digits?
 
-Standard autoregressive Transformers rely on soft pairwise routing across static depth $L$. When extrapolating beyond their training horizon ($n > 12$ digits), standard models fail catastrophically ($0.0\%$ extrapolation accuracy) due to:
-1. **Positional Phase Drift**: Monotonic 1D Rotary Position Embeddings (1D-RoPE) rotate query and key representations out of phase as context length $T$ grows.
-2. **Bounded Sequential Depth**: Static feed-forward layers cannot propagate cascading carry transitions ($99\dots99 + 1$) without state decay.
+Standard autoregressive Transformers rely on soft pairwise routing across static depth L. When extrapolating beyond their training horizon (n > 12 digits), standard models fail catastrophically (0.0% extrapolation accuracy) due to:
+1. **Positional Phase Drift**: Monotonic 1D Rotary Position Embeddings (1D-RoPE) rotate query and key representations out of phase as context length T grows.
+2. **Bounded Sequential Depth**: Static feed-forward layers cannot propagate cascading carry transitions (99...99 + 1) without state decay.
 
 ### The Solution: Decoupled 2D-RoPE + Recurrent Weight-Tied Depth
 
 To solve these limitations, this repository introduces two complementary architectural inductive biases:
-1. **Decoupled 2D Rotary Position Embeddings (2D-RoPE)**: Splits head dimension $d_k$ into orthogonal decimal-place ($\Delta p = 0$) and template-step ($\tau$) coordinates, enforcing invariant column matching independent of sequence length.
-2. **Weight-Tied Recurrent Depth ($R = 3$)**: Unrolls physical Transformer layers recurrently across $R=3$ passes per step with residual scaling, providing deep multi-step state routing at zero parameter cost.
+1. **Decoupled 2D Rotary Position Embeddings (2D-RoPE)**: Splits head dimension d_k into orthogonal decimal-place (Delta p = 0) and template-step (tau) coordinates, enforcing invariant column matching independent of sequence length.
+2. **Weight-Tied Recurrent Depth (R = 3)**: Unrolls physical Transformer layers recurrently across R = 3 passes per step with residual scaling, providing deep multi-step state routing at zero parameter cost.
 
 ### Key Results Matrix
 
-| Architecture | Total Params | Effective Depth | In-Distribution (1–12 Digits) | Extrapolation (14–20 Digits) | 50-Digit Cascade Carry ($99\dots99+1$) | Multi-Tool Routing |
+| Architecture | Total Params | Effective Depth | In-Distribution (1–12 Digits) | Extrapolation (14–20 Digits) | 50-Digit Cascade Carry (99...99 + 1) | Multi-Tool Routing |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Standard Transformer (1D-RoPE)** | 18.91M | 6 layers | 33.3% | 0.0% | 0.0% | 12.0% |
 | **HRM-RoPE Baseline** | 1.57M | 8 cycles | 100.0% | 91.7% | 100.0% (20d) | N/A |
 | **100k Recurrent 2D-RoPE** | 100,672 | 6 layers (unrolled) | 100.0% | 100.0% | 100.0% (20d) | 100.0% (50/50) |
-| **ScaledGPT (Champion Model)** | **18.95M** | **18 layers (unrolled)** | **100.0% [PASS]** | **100.0% [PASS]** | **100.0% (50d) [PASS]** | **100.0% (26/26) [PASS]** |
+| **Character Based Transformer (CBT)** | **18.95M** | **18 layers (unrolled)** | **100.0% [PASS]** | **100.0% [PASS]** | **100.0% (50d) [PASS]** | **100.0% (26/26) [PASS]** |
 
 ---
 
-## 2. Champion Model: ScaledGPT
+## 2. Champion Model: Character Based Transformer (CBT)
 
-The repository champion model is **ScaledGPT** (~18.95M parameters), optimized for dual algorithmic reasoning and multi-tool agent execution:
+The repository champion model is **Character Based Transformer (CBT)** (~18.95M parameters), optimized for dual algorithmic reasoning and multi-tool agent execution:
 
 - **Parameters**: 18,944,512 total (18,887,680 non-embedding)
-- **Geometry**: $d_{\text{model}} = 512$, $n_{\text{head}} = 8$, head dimension $= 64$, $d_{\text{ffn}} = 2048$
-- **Physical Layers**: $L = 6$
-- **Recurrent Passes**: $R = 3$ (Effective Depth $= 18$ layers)
+- **Geometry**: d_model = 512, n_head = 8, head_dim = 64, d_ffn = 2048
+- **Physical Layers**: L = 6
+- **Recurrent Passes**: R = 3 (Effective Depth = 18 layers)
 - **Positional Bias**: Decoupled 2D-RoPE with selective coordinate shifting
 - **Training Trajectory**: Pretrained on 247.3M tokens (loss `0.000094`), followed by 2-stage Supervised Fine-Tuning (SFT) for 1-hop induction copy and tool routing.
 
@@ -76,8 +76,8 @@ LLM_Explanation/
 │
 ├── champion_model/                # Standalone Champion Model Suite
 │   ├── checkpoints/               # Directory for champion weights (downloaded from HF)
-│   ├── scaled_t4/                 # ScaledGPT (18.95M, 1-50 digits + tool calling)
-│   │   ├── model.py               # ScaledGPT architecture (2D-RoPE + Recurrent unrolling)
+│   ├── scaled_t4/                 # Character Based Transformer (CBT, 18.95M, 1-50 digits + tool calling)
+│   │   ├── model.py               # CBT architecture (2D-RoPE + Recurrent unrolling)
 │   │   ├── tokenizer.py           # ScaledTokenizer with tool schema support
 │   │   ├── dataset.py             # Arithmetic and structured tool dataset generator
 │   │   ├── interactive.py         # Live interactive terminal CLI
@@ -176,7 +176,7 @@ Enter an ongoing dialogue session:
 ```
 ```text
 ================================================================================
-SCALEDGPT CHAMPION (~18.95M) INTERACTIVE TERMINAL
+CHARACTER BASED TRANSFORMER (CBT, ~18.95M) INTERACTIVE TERMINAL
 Type an arithmetic equation (e.g. '12345+67890=') or a natural question.
 Type 'exit' or 'quit' to terminate.
 ================================================================================

@@ -35,16 +35,15 @@ datasets:
 - synthetic
 metrics:
 - accuracy
-pipeline_tag: text-generation
 ---
 
-# ScaledGPT (~18.95M): Recurrent 2D-RoPE Architecture for Algorithmic Length Extrapolation
+# Character Based Transformer (CBT): Recurrent 2D-RoPE Architecture for Algorithmic Length Extrapolation
 
 ## 1. Model Overview
 
-**ScaledGPT** is an autoregressive Transformer model engineered to overcome the empirical limits of standard self-attention on sequential state machines and multi-tool agent execution.
+**Character Based Transformer (CBT)** is an autoregressive Transformer model (~18.95M parameters) engineered to overcome the empirical limits of standard self-attention on sequential state machines and multi-tool agent execution.
 
-By combining **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** with **Weight-Tied Recurrent Depth (R = 3)**, ScaledGPT achieves:
+By combining **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** with **Weight-Tied Recurrent Depth (R = 3)**, CBT achieves:
 - **100.0% Exact Match Accuracy** on 1 to 50 digit column arithmetic length extrapolation (including 50-digit cascading carry 99...99 + 1).
 - **100.0% Multi-Tool Routing Accuracy** across 9 tool schemas (single-tool, multi-tool chaining, nested JSON schemas, and error recovery).
 - **Dual NVIDIA T4 GPU Efficiency**: Native Turing sm_75 FP16 AMP and SDPA memory-efficient attention.
@@ -55,6 +54,7 @@ By combining **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** with **Weight
 
 | Parameter | Specification |
 | :--- | :--- |
+| **Model Name** | Character Based Transformer (CBT) |
 | **Total Parameters** | 18,944,512 (~18.95M) |
 | **Non-Embedding Parameters** | 18,887,680 (~18.89M) |
 | **Physical Layers (L)** | 6 |
@@ -88,11 +88,11 @@ By combining **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** with **Weight
 
 ```python
 import torch
-from model import ScaledGPT, ScaledGPTConfig
-from tokenizer import ScaledTokenizer
+from model import ScaledGPT as CBT, ScaledGPTConfig as CBTConfig
+from tokenizer import ScaledTokenizer as CBTTokenizer
 
 # 1. Load configuration and model
-config = ScaledGPTConfig(
+config = CBTConfig(
     block_size=1024,
     vocab_size=115,
     n_layer=6,
@@ -101,7 +101,7 @@ config = ScaledGPTConfig(
     n_recur=3,
     pos_emb_type="rope_2d"
 )
-model = ScaledGPT(config)
+model = CBT(config)
 
 # 2. Load weights
 state_dict = torch.load("champion_final.pt", map_location="cpu")
@@ -109,7 +109,7 @@ model.load_state_dict(state_dict)
 model.eval()
 
 # 3. Initialize tokenizer
-tokenizer = ScaledTokenizer()
+tokenizer = CBTTokenizer()
 ```
 
 ### Interactive CLI

@@ -1,8 +1,8 @@
-# ScaledGPT (~18.95M Parameters): Recurrent 2D-RoPE Architecture for Dual NVIDIA T4
+# Character Based Transformer (CBT, ~18.95M Parameters): Recurrent 2D-RoPE Architecture for Dual NVIDIA T4
 
 ## Overview
 
-ScaledGPT scales the 200k champion architecture to a larger parameter capacity (**~18.95M parameters**), strictly optimized for a **25-hour Dual NVIDIA T4 GPU run on Kaggle**.
+Character Based Transformer (CBT) scales the champion architecture to a robust parameter capacity (**~18.95M parameters**), strictly optimized for Dual NVIDIA T4 GPUs.
 
 It unifies:
 1. **Multi-Digit Column Arithmetic Length Extrapolation** from 1 to 50+ digits with 100% precision.

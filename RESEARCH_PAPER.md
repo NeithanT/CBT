@@ -11,7 +11,7 @@ Autoregressive Transformer language models exhibit remarkable linguistic fluency
 
 We show that across nine distinct architectural baselines—spanning pure causal self-attention, subword BPE tokenization, cross-domain philosophical co-training, looped recurrent Transformers, hybrid SSM-Transformers, and harmonic oscillators—every standard architecture collapses catastrophically on multi-digit arithmetic extrapolation, plunging to **0.0% accuracy** on 18- to 20-digit addition despite saturating in-distribution accuracy (>98%). We synthesize these baseline failures into a single comparative matrix, pinpointing two structural pathologies: (1) *1D Rotary Positional Phase Drift*, which diffuses attention entropy across extended horizons; and (2) *The Zero-Loop Attractor Basin*, wherein fixed-depth Directed Acyclic Graphs (DAGs) fail to track open-ended state transitions.
 
-Addressing these barriers, we present the discovery of **`UnifiedGPT-200k`**, an ultra-compact Transformer operating under an extreme capacity ceiling of **204,864 parameters** ($197,760$ non-embedding parameters, $d_{\text{model}}=64, L=4, n_{\text{head}}=4$). Our architecture resolves length generalization and multi-task reasoning via three core innovations:
+Addressing these barriers, we present the discovery of the **Character Based Transformer (CBT)**, an architecture operating under an extreme capacity ceiling of **204,864 parameters** in compact form ($197,760$ non-embedding parameters, $d_{\text{model}}=64, L=4, n_{\text{head}}=4$) and scaled up to 18.95M parameters. Our architecture resolves length generalization and multi-task reasoning via three core innovations:
 1. **Decoupled 2D-RoPE**: Subspace direct-sum decomposition ($\mathcal{V}_{\text{macro}} \oplus \mathcal{V}_{\text{micro}}$) guaranteeing geometric coordinate invariance ($\Delta p = 0 \implies \mathcal{R}_{\Theta}(0) = \mathbf{I}$).
 2. **Weight-Tied Recurrent Depth ($R=3$) with $1/\sqrt{R}$ Scaling**: Unrolling 4 physical layers across 3 recurrent passes, providing an effective reasoning depth of 12 layers at zero parameter overhead while preserving dynamical isometry.
 3. **Two-Stage Annealing Protocol**: Overcoming the 1.92:1 multi-task token dominance barrier between lexical tool tokens and discrete math carry bits.
@@ -121,7 +121,7 @@ The total failure of the 18.91M baselines proved that **scaling parameter counts
 
 If the transition function is mathematically compact ($\mathcal{O}(N)$ transitions with 200 rules), the solution is not to increase parameters from 18M to 1T, but to discover the **exact geometric inductive biases** that enforce state machine invariance.
 
-We formulated **`UnifiedGPT-200k`**, an ultra-compact Transformer operating under an extreme capacity ceiling of **204,864 total parameters** ($197,760$ non-embedding parameters, $d_{\text{model}}=64, L=4, n_{\text{head}}=4$). This represents a **99.0% reduction in parameter footprint** compared to the 18.91M baselines.
+We formulated the **Character Based Transformer (CBT / UnifiedGPT-200k)**, an ultra-compact architecture operating under an extreme capacity ceiling of **204,864 total parameters** ($197,760$ non-embedding parameters, $d_{\text{model}}=64, L=4, n_{\text{head}}=4$). This represents a **99.0% reduction in parameter footprint** compared to the 18.91M baselines.
 
 ```
 +-----------------------------------------------------------------------------+
