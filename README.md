@@ -121,8 +121,8 @@ LLM_Explanation/
 ### Setup
 ```bash
 # Clone the repository
-git clone https://github.com/<username>/LLM_Explanation.git
-cd LLM_Explanation
+git clone https://github.com/NeithanT/CBT.git
+cd CBT
 
 # Create and activate virtual environment
 python3 -m venv .venv
