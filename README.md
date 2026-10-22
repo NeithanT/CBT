@@ -210,7 +210,7 @@ This utility automatically packages:
 
 ---
 
-## 6. Verification & Test Suite
+## 7. Verification & Test Suite
 
 Verify complete test coverage across model architecture, 2D-RoPE coordinate generators, tokenizers, and loss masking:
 ```bash
@@ -223,7 +223,7 @@ Verify complete test coverage across model architecture, 2D-RoPE coordinate gene
 
 ---
 
-## 7. Citation & References
+## 8. Citation & References
 
 If you use this codebase or architecture in your research, please cite:
 

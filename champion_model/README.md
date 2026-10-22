@@ -25,26 +25,27 @@ The architecture is identical across both domains, utilizing:
 
 ```
 champion_model/
-|-- __init__.py                # Top-level exports (MathGPT, ToolGPT, ToolTokenizer)
-|-- evaluate_all.py            # Unified runner for Math and Tool benchmarks
-|-- README.md                  # Technical architecture and reproduction guide
-|-- math_model/                # Arithmetic Length Extrapolation
-|   |-- __init__.py
+|-- __init__.py                # Package exports
+|-- evaluate_all.py            # Unified evaluation runner
+|-- README.md                  # Champion model suite documentation
+|-- scaled_t4/                 # ScaledGPT (~18.95M Parameters, Dual T4 Champion)
+|   |-- model.py               # ScaledGPT architecture (2D-RoPE, R=3 unrolling)
+|   |-- tokenizer.py           # ScaledTokenizer with tool schema support
+|   |-- dataset.py             # 1-50 digit curriculum & multi-tool dataset generator
+|   |-- interactive.py         # Live interactive CLI with mock tool execution
+|   |-- sft_search.py          # 1-hop induction copy SFT training script
+|   `-- config.json            # Model architecture configuration
+|-- math_model/                # Ultra-Compact 100k Math Extrapolation Model
 |   |-- model.py               # MathGPT architecture (2D-RoPE, R=3 recurrent unrolling)
 |   |-- train_and_eval.py      # Training loop and 1-20 digit benchmark suite
-|   |-- config_100k_2d.json    # Exact model configuration
-|   `-- checkpoints/
-|       `-- dense_100k_2d_rec3_full.pt  # 100.0% accuracy checkpoint (915 KB)
-`-- tool_model/                # Natural Language Tool Calling
-    |-- __init__.py
+|   |-- arithmetic.py          # Column scratchpad formatting and extraction
+|   `-- config_100k_2d.json    # Hyperparameter configuration
+`-- tool_model/                # 100k Natural Language Tool Calling
     |-- model.py               # ToolGPT architecture (Hierarchical 2D Discourse RoPE)
-    |-- tokenizer.py           # Character-level structured discourse tokenizer
-    |-- bpe_tokenizer.py       # 4k BPE Subword tokenizer ablation
-    |-- dataset.py             # Synthetic tool dialogues and coordinate extraction
-    |-- train_and_eval.py      # ToolGPT training and 50-case benchmark evaluation
-    `-- checkpoints/
-        |-- tool_gpt_100k.pt   # 100.0% accuracy checkpoint (423 KB)
-        `-- tool_gpt_100k_bpe4k.pt
+    |-- tokenizer.py           # Structured discourse tokenizer
+    |-- bpe_tokenizer.py       # Subword tokenizer ablation
+    |-- dataset.py             # Synthetic tool dialogues generator
+    `-- train_and_eval.py      # ToolGPT training and 50-case benchmark evaluation
 ```
 
 ---
