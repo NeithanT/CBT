@@ -24,10 +24,10 @@ Small autoregressive Transformers trained from scratch on 1–12 digit addition 
 | **HRM-RoPE (Decoupled 2D-RoPE)** | 1.56M | 8 cycles | 100.0% (1–12d) | 100.0% (18–20d) | N/A (512-tok limit) | 100.0% (20d) | N/A |
 | **CBT-100k ($L=2, R=3$)** | 100,672 | 6 layers (unrolled) | 100.0% (1–12d) | 100.0% (14–20d) | N/A (512-tok limit) | 100.0% (20d) | N/A |
 | **CBT-200k ($L=4, R=3$)** | 197.8k | 12 layers (unrolled) | 100.0% (1–12d) | 100.0% (14–20d) | N/A (512-tok limit) | 100.0% (20d) | 100.0% (50/50) |
-| **CBT-18.95M (`champion_v2_final.pt`)** | **18.95M** | **18 layers (unrolled)** | -- | **100.0% (90/90, 16–55d)** | **100.0% (80/80)** | -- | **80.8% (21/26) / 56.7% exact on 30 unseen** |
+| **CBT-18.95M (`champion_final.pt`)** | **18.95M** | **18 layers (unrolled)** | **100.0% (1–15d)** | **100.0% (180/180)** | **98.8% (237/240)** | **100.0% (20/20 Struct)** | **100.0% (26/26) / 88.9% OOD** |
 
-- **Shift-Masking Horizon ($p_{\max} = N_{\text{train}} + k = 15 + 45 = 70$)**: On random multi-carry sums (`results/champion_v2_extrapolation_16_55d.json`, $n=10$ per length), **CBT-18.95M** achieves **100.0% (90/90; 95% Wilson CI `[95.9, 100.0]%`)** across 16–55 digits. Lengths beyond 55 digits were not evaluated for this checkpoint.
-- **Unseen-Entity Tool Calling**: On 30 entity-disjoint unseen prompts (`benchmarks/evaluate_unseen_ood.py`), CBT-18.95M routes **96.7% (29/30)** to the intended tool and copies **56.7% (17/30; CI `[39.2, 72.6]%`)** of arguments exactly; this is not shown to exceed 50%.
+- **Shift-Masking Horizon ($p_{\max} = N_{\text{train}} + k = 15 + 32 = 47$)**: Across the 315-problem random multi-carry sweep from 16 to 100 digits (`benchmarks/evaluate_random_16_to_100d.py`), **CBT-18.95M** achieves **100.0% (180/180; 95% Wilson CI `[97.9, 100.0]%`)** across 16–40 digits ($p \le 40$), **93.3–96.7%** at 45–50 digits ($p \approx 47$), and **90.0% (18/20)** at 55 digits, before dropping at 60 digits (**45.0%**), 70 digits (**6.7%**), and 80–100 digits (**0.0%**) once macro column coordinates $p$ exceed the shifted training support.
+- **Zero-Shot OOD Tool Calling**: On 18 unseen OOD prompts, CBT-18.95M routes **88.9% (16/18)** to the intended tool and copies **50.0% (8/16)** of arguments with exact character match (68.8% exact or near-exact).
 
 ---
 
@@ -44,15 +44,15 @@ The repository champion model is **Character Based Transformer (CBT)** (~18.95M 
 
 ### Model Weights on Hugging Face
 
-The trained model checkpoint (`champion_v2_final.pt`, ~75.8 MB) is available on Hugging Face:
+The trained model checkpoint (`champion_final.pt`, ~75.8 MB) is available on Hugging Face:
 
 - **Repository**: [https://huggingface.co/Neithanvarvas/CBT](https://huggingface.co/Neithanvarvas/CBT)
-- **Checkpoint file**: `champion_v2_final.pt`
+- **Checkpoint file**: `champion_final.pt`
 
 To download and place the weights locally:
 ```bash
 # Using huggingface_hub
-python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='Neithanvarvas/CBT', filename='champion_v2_final.pt', local_dir='champion_model/scaled_t4/checkpoints')"
+python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='Neithanvarvas/CBT', filename='champion_final.pt', local_dir='champion_model/scaled_t4/checkpoints')"
 ```
 
 ---
@@ -188,7 +188,7 @@ This project couples GitHub for version-controlled code, documentation, and eval
 | Ecosystem | Destination | Purpose |
 | :--- | :--- | :--- |
 | **GitHub** | [https://github.com/NeithanT/CBT](https://github.com/NeithanT/CBT) | Open-source code, 2D-RoPE implementation, tests, and paper |
-| **Hugging Face** | [https://huggingface.co/Neithanvarvas/CBT](https://huggingface.co/Neithanvarvas/CBT) | Pretrained champion weights (`champion_v2_final.pt`), model card, and quickstart |
+| **Hugging Face** | [https://huggingface.co/Neithanvarvas/CBT](https://huggingface.co/Neithanvarvas/CBT) | Pretrained champion weights (`champion_final.pt`), model card, and quickstart |
 
 ### 1. Pulling Model Weights from Hugging Face
 
@@ -206,7 +206,7 @@ python benchmarks/download_from_hf.py
 
 **Method C: Hugging Face Python SDK**
 ```bash
-python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='Neithanvarvas/CBT', filename='champion_v2_final.pt', local_dir='champion_model/scaled_t4/checkpoints')"
+python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='Neithanvarvas/CBT', filename='champion_final.pt', local_dir='champion_model/scaled_t4/checkpoints')"
 ```
 
 ### 2. Pushing New Weights to Hugging Face
@@ -220,7 +220,7 @@ hf auth login
 python benchmarks/upload_to_hf.py --repo_id "Neithanvarvas/CBT"
 ```
 This utility automatically bundles and verifies:
-- Trained checkpoint (`champion_v2_final.pt`, ~75.8 MB)
+- Trained checkpoint (`champion_final.pt`, ~75.8 MB)
 - Model card metadata (`README.md` with tags and benchmark leaderboard)
 - Architecture code (`model.py`), tokenizer (`tokenizer.py`), and hyperparameters (`config.json`)
 - Interactive CLI runner (`interactive.py`)
