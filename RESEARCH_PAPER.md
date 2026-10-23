@@ -248,7 +248,7 @@ Nine 1D/NoPE baselines (the default character model plus eight alternatives, tra
 | **HRM-RoPE (Dual-Loop)** | 1.56M | **Decoupled 2D-RoPE** | **1–12 Digits** | 100.0% | 66.7% (14–16d) | **100.0% (18–20d)** | **20 Digits (+8 Unseen Digits)** |
 | **CBT-100k ($L=2, R=3$)** | 98.9k | **Decoupled 2D-RoPE** | **1–12 Digits** | **100.0%** | **100.0% (14–16d)** | **100.0% (18–20d)** | **20 Digits (+8 Unseen Digits)** |
 | **CBT-200k ($L=4, R=3$)** | 197.8k | **Decoupled 2D-RoPE** | **1–12 Digits** | **100.0%** | **100.0% (14–16d)** | **100.0% (18–20d)** | **20 Digits (+8 Unseen) + Tools** |
-| **CBT-18.95M ($L=6, R=3$)** | **18.89M** | **Decoupled 2D-RoPE** | **1–25 Digits (replay)** | **80.8%** | **100.0% (16–40d Rand)** | **100.0% (45–50d); 100.0% (55d)** | **100.0% (16–50d); 70.0% (60d), 40.0% (70d)** |
+| **CBT-18.95M ($L=6, R=3$)** | **18.89M** | **Decoupled 2D-RoPE** | **1–25 Digits (replay)** | **98.9% (89/90, 8–15d)** | **100.0% (16–40d Rand)** | **100.0% (45–50d); 100.0% (55d)** | **100.0% (16–50d); 70.0% (60d), 40.0% (70d)** |
 
 ---
 
