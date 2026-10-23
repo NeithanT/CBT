@@ -103,11 +103,11 @@ We first present the empirical evaluation of the final converged **CBT-18.95M** 
 ---
 
 **Table 2: Executive Benchmark Summary of Final Converged CBT-18.95M (`champion_final.pt`)**  
-Scores are raw accuracies with 95% Wilson confidence intervals (no pass/fail threshold is applied). Arithmetic extrapolation combines the 20-case structured suite (Table 3) and the 315-problem random multi-carry sweep across 16–100 digits (Table 4); each model was trained once. The OOD copy rows are computed over the 16 correctly routed prompts of Table 5; exact match is the headline metric.
+Scores are raw accuracies with 95% Wilson confidence intervals (no pass/fail threshold is applied). Arithmetic extrapolation combines the 20-case structured suite (Table 3) and the 315-problem random multi-carry sweep across 16–100 digits (Table 3B); each model was trained once. The OOD copy rows are computed over the 16 correctly routed prompts of Table 5; exact match is the headline metric.
 
 | Capability Domain | Benchmark Suite / Evaluation Metric | Scope / Test Cases | Training Exposure | Final Score | 95% Wilson CI |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| **1. Standalone Sums (2D Math)** | Tier 1: In-Distribution Column Addition | 1–15 Digits | **Seen in Training (1–15d)** | **100.0%** | -- |
+| **1. Standalone Sums (2D Math)** | Tier 1: In-Distribution Column Addition | 1–15 Digits ($n=90$; 30/len at 8, 12, 15d) | **Seen in Training (1–15d)** | **100.0% (90/90)** | [95.9, 100.0]% |
 | | Tier 2: Structured Extrapolation | 16–50 Digits ($n=20$, incl. $99\dots9+1$) | **Unseen OOD (+1 to +35d)** | **100.0% (20/20)** | [83.9, 100.0]% |
 | | Tier 3: Random Multi-Carry Extrapolation (Within $p_{\max}=47$) | 16, 20, 25, 30, 35, 40 Digits ($n=180$) | **Unseen OOD (+1 to +25d)** | **100.0% (180/180)** | [97.9, 100.0]% |
 | | Tier 4: Random Multi-Carry at Horizon ($p_{\max}=47$) | 45 & 50 Digits ($n=60$; 58/60 Think OK) | **Unseen OOD (+30 to +35d)** | **95.0% (57/60)** | [86.3, 98.3]% |

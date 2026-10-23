@@ -168,7 +168,7 @@ We first present the empirical evaluation of the final converged \textbf{CBT-18.
 \textbf{Capability Domain} & \textbf{Benchmark Suite / Evaluation Metric} & \textbf{Scope / Test Cases} & \textbf{Training Exposure} & \textbf{Final Score} & \textbf{95\% Wilson CI} \\
 \midrule
 \multirow{6}{*}{\textbf{1. Standalone Sums (2D Math)}} 
- & Tier 1: In-Distribution Column Addition & 1--15 Digits & \textbf{Seen in Training (1--15d)} & \textbf{100.0\%} & -- \\
+ & Tier 1: In-Distribution Column Addition & 1--15 Digits ($n=90$; 30/len at 8, 12, 15d) & \textbf{Seen in Training (1--15d)} & \textbf{100.0\% (90/90)} & [95.9, 100.0]\% \\
  & Tier 2: Structured Extrapolation & 16--50 Digits ($n=20$, incl.\ $99\dots9+1$) & \textbf{Unseen OOD (+1 to +35d)} & \textbf{100.0\% (20/20)} & [83.9, 100.0]\% \\
  & Tier 3: Random Multi-Carry Extrapolation (Within $p_{\max}=47$) & 16, 20, 25, 30, 35, 40 Digits ($n=180$) & \textbf{Unseen OOD (+1 to +25d)} & \textbf{100.0\% (180/180)} & [97.9, 100.0]\% \\
  & Tier 4: Random Multi-Carry at Horizon ($p_{\max}=47$) & 45 \& 50 Digits ($n=60$; 58/60 Think OK) & \textbf{Unseen OOD (+30 to +35d)} & \textbf{95.0\% (57/60)} & [86.3, 98.3]\% \\
