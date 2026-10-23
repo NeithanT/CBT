@@ -138,7 +138,7 @@ def main():
     parser.add_argument("--head", type=int, default=0, help="Attention head to visualize")
     args = parser.parse_args()
 
-    champion_ckpt = os.path.join(ROOT_DIR, "champion_model", "scaled_t4", "checkpoints", "champion_final.pt")
+    champion_ckpt = os.path.join(ROOT_DIR, "champion_model", "scaled_t4", "checkpoints", "champion_v2_final.pt")
 
     # If no specific checkpoint is passed, try champion model or pull from Hugging Face
     if args.checkpoint is None:
@@ -148,7 +148,7 @@ def main():
                 print("[INFO] Champion weights not found locally. Pulling from Hugging Face (Neithanvarvas/CBT)...")
                 champion_ckpt = hf_hub_download(
                     repo_id="Neithanvarvas/CBT",
-                    filename="champion_final.pt",
+                    filename="champion_v2_final.pt",
                     local_dir=os.path.dirname(champion_ckpt)
                 )
             except Exception as e:

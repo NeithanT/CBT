@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Download Champion Weights from Hugging Face Hub.
-Pulls 'champion_final.pt' from https://huggingface.co/Neithanvarvas/CBT
-and places it into 'champion_model/scaled_t4/checkpoints/champion_final.pt'.
+Pulls 'champion_v2_final.pt' from https://huggingface.co/Neithanvarvas/CBT
+and places it into 'champion_model/scaled_t4/checkpoints/champion_v2_final.pt'.
 """
 
 import os
@@ -16,7 +16,7 @@ except ImportError:
     sys.exit(1)
 
 DEFAULT_REPO = "Neithanvarvas/CBT"
-DEFAULT_FILENAME = "champion_final.pt"
+DEFAULT_FILENAME = "champion_v2_final.pt"
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_TARGET_DIR = os.path.join(REPO_ROOT, "champion_model", "scaled_t4", "checkpoints")
 
