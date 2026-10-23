@@ -42,6 +42,9 @@
 
 \begin{document}
 
+\renewcommand{\dbltopfraction}{0.9}
+\renewcommand{\dblfloatpagefraction}{0.8}
+\setcounter{dbltopnumber}{3}
 \twocolumn[
   \begin{@twocolumnfalse}
     \maketitle
@@ -94,187 +97,34 @@ To test this, we unify arithmetic and structured dialogue into a single characte
 
 We emphasize that discourse-mode coordinates (\(p = \text{turn index}\)) represent an architectural design choice to permit unified forward execution across arithmetic and tools---not a claim that 2D coordinates improve natural language text or tool routing over 1D. Indeed, our tokenizer ablations (Table 6) show that a standard 1D atomic-character model already scores 100\% (50/50) on structured tool calling. Evaluating tool agency serves to demonstrate that Decoupled 2D-RoPE does not compromise standard character-level capabilities, allowing a single compact model to perform both tasks without mode switching.
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\textbf{Table 1: How the Character-Based Transformer (CBT) Organizes Characters as a 2D Matrix \((p, \tau)\)}\\
 Unlike 1D indices \(t \in \{0, 1, \dots, T-1\}\) that grow along a flat line, CBT places atomic characters onto a structured 2D coordinate grid. \textbf{Part A (Arithmetic Mode)}: Macro row \(p\) tracks the decimal column rank (\(10^p\)) so matching digits in the prompt, scratchpad, and answer share identical \(p\) (\(\Delta p = 0\)), while micro column \(\tau \in [0, 9]\) tracks the 10-step column template. \textbf{Part B (Discourse Mode)}: Macro row \(p \in \{0..4\}\) tracks the functional discourse block, while micro column \(\tau\) tracks the character index within that block.
 
-\emph{Part A --- Arithmetic 2D Matrix Mode}: Prompt \texttt{47+85=} followed by Scratchpad \texttt{\textless{}THINK\textgreater{}(0+7+5)=12(1+4+8)=13\textless{}/THINK\textgreater{}=132}
-
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{>{\raggedright\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0571}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}}
+\scriptsize
+\setlength{\tabcolsep}{2.2pt}
+\caption*{\textbf{Table 1: How the Character-Based Transformer (CBT) organizes characters as a 2D matrix $(p, \tau)$.}}
+\vspace{2pt}
+{\normalsize \emph{Part A --- Arithmetic 2D Matrix Mode} : prompt \texttt{47+85=}, scratchpad \texttt{\textless{}THINK\textgreater{}(0+7+5)=12(1+4+8)=13\textless{}/THINK\textgreater{}}, answer \texttt{=132} (the middle of the scratchpad is elided in the 1D index).}\par\vspace{2pt}
+\begin{tabular}{lcccccccccccccccccccccc}
 \toprule
-\begin{minipage}[b]{\linewidth}\raggedright
-Region
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{4}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{7}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{+}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{8}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{5}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{=}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{\textless{}THINK\textgreater{}}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{(}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{0}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{+}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{7}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{+}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{5}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{)}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{=}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{1}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{2}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{\textless{}/THINK\textgreater{}}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{=}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{1}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{3}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{2}
-\end{minipage} \\
+Region & \texttt{\scriptsize 4} & \texttt{\scriptsize 7} & \texttt{\scriptsize +} & \texttt{\scriptsize 8} & \texttt{\scriptsize 5} & \texttt{\scriptsize =} & \texttt{\scriptsize \textless{}THINK\textgreater{}} & \texttt{\scriptsize (} & \texttt{\scriptsize 0} & \texttt{\scriptsize +} & \texttt{\scriptsize 7} & \texttt{\scriptsize +} & \texttt{\scriptsize 5} & \texttt{\scriptsize )} & \texttt{\scriptsize =} & \texttt{\scriptsize 1} & \texttt{\scriptsize 2} & \texttt{\scriptsize \textless{}/THINK\textgreater{}} & \texttt{\scriptsize =} & \texttt{\scriptsize 1} & \texttt{\scriptsize 3} & \texttt{\scriptsize 2} \\
 \midrule
-
+1D index $t$ & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 & 16 & 17 & 28 & 29 & 30 & 31 & 32 \\
+Macro $p_t$ (row) & 1 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 0 \\
+Micro $\tau_t$ (col) & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 0 & 0 & 0 & 0 & 0 \\
 \bottomrule
-
-\textbf{1D Index \(t\)} & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 & 16 & 17 & 28 & 29 & 30 & 31 & 32 \\
-\textbf{Macro \(p_t\) (Row)} & \textbf{1} & \textbf{0} & 0 & \textbf{1} & \textbf{0} & 0 & 0 & \textbf{0} & \textbf{0} & \textbf{0} & \textbf{0} & \textbf{0} & \textbf{0} & \textbf{0} & \textbf{0} & \textbf{0} & \textbf{0} & 0 & 0 & \textbf{1} & \textbf{1} & \textbf{0} \\
-\textbf{Micro \(\tau_t\) (Col)} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 0 & 0 & 0 & 0 & 0 \\
-\end{tabular}}
-\end{table*}
-
-\emph{Part B --- Natural Language Discourse 2D Matrix Mode}: Multi-Turn Tool-Calling Dialogue (\texttt{\textless{}USER\textgreater{}} \(\to\) \texttt{\textless{}THINK\textgreater{}} \(\to\) \texttt{\textless{}CALL\textgreater{}} \(\to\) \texttt{\textless{}RESULT\textgreater{}} \(\to\) \texttt{\textless{}ANSWER\textgreater{}})
-
-\begin{table*}[t]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{>{\raggedright\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0571}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}
-  >{\centering\arraybackslash}p{(\linewidth - 44\tabcolsep) * \real{0.0429}}}
+\end{tabular}\par\vspace{8pt}
+{\normalsize \emph{Part B --- Natural Language Discourse 2D Matrix Mode}: multi-turn tool-calling dialogue.}\par\vspace{2pt}
+\begin{tabular}{lcccccccccccccccccccccc}
 \toprule
-\begin{minipage}[b]{\linewidth}\raggedright
-Discourse Row
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{\textless{}USER\textgreater{}}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{W}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{h}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{a}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{t}\ldots{}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{\textless{}THINK\textgreater{}}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{I}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{w}\ldots{}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{\textless{}CALL\textgreater{}}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{s}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{e}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{a}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{r}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{c}\ldots{}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{\textless{}RESULT\textgreater{}}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{\{}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{"}\ldots{}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{\textless{}ANSWER\textgreater{}}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{I}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{t}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\texttt{}\ldots{}
-\end{minipage} \\
+Discourse row & \texttt{\scriptsize \textless{}USER\textgreater{}} & \texttt{\scriptsize W} & \texttt{\scriptsize h} & \texttt{\scriptsize a} & \texttt{\scriptsize t\ldots} & \texttt{\scriptsize \textless{}THINK\textgreater{}} & \texttt{\scriptsize I} & \texttt{\scriptsize \ } & \texttt{\scriptsize w\ldots} & \texttt{\scriptsize \textless{}CALL\textgreater{}} & \texttt{\scriptsize s} & \texttt{\scriptsize e} & \texttt{\scriptsize a} & \texttt{\scriptsize r} & \texttt{\scriptsize c\ldots} & \texttt{\scriptsize \textless{}RESULT\textgreater{}} & \texttt{\scriptsize \{} & \texttt{\scriptsize "\ldots} & \texttt{\scriptsize \textless{}ANSWER\textgreater{}} & \texttt{\scriptsize I} & \texttt{\scriptsize t} & \texttt{\scriptsize \ \ldots} \\
 \midrule
-
+Macro $p_t$ (row) & 0 & 0 & 0 & 0 & 0 & 1 & 1 & 1 & 1 & 2 & 2 & 2 & 2 & 2 & 2 & 3 & 3 & 3 & 4 & 4 & 4 & 4 \\
+Micro $\tau_t$ (col) & 0 & 1 & 2 & 3 & 4 & 0 & 1 & 2 & 3 & 0 & 1 & 2 & 3 & 4 & 5 & 0 & 1 & 2 & 0 & 1 & 2 & 3 \\
 \bottomrule
-
-\textbf{Macro \(p_t\) (Row)} & \textbf{0} & \textbf{0} & \textbf{0} & \textbf{0} & \textbf{0} & \textbf{1} & \textbf{1} & \textbf{1} & \textbf{1} & \textbf{2} & \textbf{2} & \textbf{2} & \textbf{2} & \textbf{2} & \textbf{2} & \textbf{3} & \textbf{3} & \textbf{3} & \textbf{4} & \textbf{4} & \textbf{4} & \textbf{4} \\
-\textbf{Micro \(\tau_t\) (Col)} & 0 & 1 & 2 & 3 & 4 & 0 & 1 & 2 & 3 & 0 & 1 & 2 & 3 & 4 & 5 & 0 & 1 & 2 & 0 & 1 & 2 & 3 \\
-\end{tabular}}
+\end{tabular}
 \end{table*}
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \subsubsection{1.3 Hypothesizing the 18M CBT Architecture}\label{hypothesizing-the-18m-cbt-architecture}
 
@@ -288,15 +138,11 @@ To test this hypothesis and achieve maximal algorithmic and tool performance wit
 
 \textbf{Practical Utility on Low-Resource Devices}: We make an explicit practical claim regarding scale. Scaling CBT as-is to frontier LLM sizes would not make practical sense: because CBT generates text \emph{character-by-character} and evaluates \(R=3\) recurrent passes per character, its autoregressive inference latency is several times slower per word than subword BPE models. CBT's primary utility is in \textbf{low-resource local inference}: learning intent routing, structured JSON/API tool calling, and exact arithmetic within a tiny 100k to 18.95M parameter footprint suitable for on-device coprocessors. The 36 MB figure reflects the FP16 weight size only: with \(R=3\), per-token compute is roughly that of a \textasciitilde57M-parameter dense model and the KV cache grows with character sequence length. On a laptop CPU (Intel Core Ultra 5 125H, FP32), batched KV-cached decoding achieves 141--394 character tokens/sec across 16--100 digit traces (and 1.1--5.3 tokens/sec uncached single-stream); we have not benchmarked mobile ARM hardware or INT8 quantization.
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
 \subsection{2. Empirical Results}\label{empirical-results}
 
 We first present the evaluation of the final \textbf{CBT-18.95M} checkpoint (\texttt{champion\_final.pt}). It starts from the pre-SFT base \texttt{champion\_base.pt} (Stage 1 Pretraining, Stage 2 Search Copy SFT, Stage 3 All-Tools 1-Hop SFT) and is further trained with the V4 SFT curriculum (45\% multi-tool dialogues, 35\% search copy, 20\% arithmetic replay with 1--25-digit operands, shift masking \(k=45\)). Because the replay covers 1--25 digits, \textbf{16--25 digits are seen in training for champion, and zero-shot extrapolation begins at 26 digits}; the 1--15 digit framing applies to the pre-SFT base only. The prompts and entities of every champion test below were audited against the champion training corpus. Earlier champion numbers were withdrawn because their test sets overlapped that corpus. All evaluations use deterministic greedy decoding (\(\text{temperature}=0.0\), \(\arg\max\)), and each table labels digit ranges as seen or unseen. We then dissect its performance against tokenization ablations, 1D baseline comparisons, and isolated 100k-parameter component ablations.
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -344,10 +190,7 @@ Final Score
 \end{tabular}}
 \end{table*}
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\onecolumn
-\begin{table*}[p]
+\begin{table*}[!p]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -407,11 +250,8 @@ CBT-18.95M (Ours)
 50 Digits & \textbf{Unseen OOD (+35 Extra Digits)} & \(\underbrace{\texttt{999...999}}_{50} + \texttt{1}=\) & \(10^{50}\) (51 digits) & \texttt{Drift\ {[}FAIL\ at\ T=1024{]}} & \texttt{N/A\ (Context:\ 715\ \textgreater{}\ 512)} & \texttt{N/A\ (Context:\ 715\ \textgreater{}\ 512)} & \(10^{50}\) \texttt{{[}PASS{]}} \\
 \end{tabular}}
 \end{table*}
-\twocolumn
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -466,9 +306,7 @@ Final Answer Exact Match
 \end{tabular}}
 \end{table*}
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -510,9 +348,7 @@ Direct chat (no tool) & 2 & 1 & 1 & \texttt{Hello,\ how\ are\ you\ today?} route
 \end{tabular}}
 \end{table*}
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -539,8 +375,6 @@ Count
 \end{tabular}}
 \end{table*}
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
 \subsubsection{2.1 Unified Capabilities of CBT-18.95M: Sums, Multi-Tool Routing, and OOD Copying}\label{unified-capabilities-of-cbt-18.95m-sums-multi-tool-routing-and-ood-copying}
 
 Tables 2, 3, 3B, 4, and 5 present the evaluation of our final \textbf{CBT-18.95M} model (\texttt{champion\_final.pt}):
@@ -556,9 +390,7 @@ Tables 2, 3, 3B, 4, and 5 present the evaluation of our final \textbf{CBT-18.95M
   \textbf{Zero-Shot OOD Copying (Table 5)}: On 18 fresh prompts, champion produced well-formed tags and routed all 18 to the intended tool. Exact copies were \textbf{10/18 (55.6\%)}; eight drifted, mostly on multi-word proper nouns and rare words (\texttt{Tbilisi} to \texttt{Thilisisi}, \texttt{Yggdrasil} to \texttt{zggdrasil}). Exact copies include single words and short phrases, and a km-inversion and calculator expression. On an independent 30-case unseen benchmark (Section 4 of the clean report), champion reaches \textbf{17/30 exact (56.7\%)} versus \textbf{4/30 (13.3\%)} for the baseline (two-sided Fisher exact \(p = 0.0009\)). The copy fidelity is therefore far below the arithmetic result.
 \end{enumerate}
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -606,9 +438,7 @@ Atomic Character & Learned 2D Lookup Table & 111 & 1--12 Digits & 98.0\% (49/50)
 \end{tabular}}
 \end{table*}
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -661,9 +491,7 @@ Foundation HRM-Text (219k tok/s) & 1.44M & 1D-RoPE + Additive Loop & 1--12 Digit
 \end{tabular}}
 \end{table*}
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -719,8 +547,6 @@ Final Pretraining Loss & 4.24M Tokens & \texttt{0.1864} & \texttt{0.1353} & \tex
 \end{tabular}}
 \end{table*}
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
 \subsubsection{2.2 Isolated Component Ablations of CBT Mechanics (4.24M Token Budget)}\label{isolated-component-ablations-of-cbt-mechanics-4.24m-token-budget}
 
 Because we tested multiple combinations of CBT components that achieved similar partial extrapolation scores before converging on our final configuration, we conducted a controlled 5-model factor ablation (Table 8) using the exact 100k-parameter budget (\texttt{100,672} parameters, \(L=2, d_{\text{model}}=64, n_{\text{head}}=4, V=27\)) and the exact same training token volume (\(4,236,029\) tokens, 2,000 steps at batch size 32) as the 100k reference model:
@@ -738,16 +564,13 @@ Because we tested multiple combinations of CBT components that achieved similar 
   \textbf{Shift Masking and Readout Termination (Model 4 vs.~Model 5)}: Comparing Model 4 (\(k=0\)) and Model 5 (\(k=16\)) isolates shift masking on this 14-case set; because they differ on only 1--2 test problems, the comparison is consistent with---but does not statistically establish---a benefit on internal scratchpad columns. At 12.8 epochs (5,000-sample pool), Models 3, 4, and 5 all score 78.6\% (11/14) on strict final string match. Inspecting the raw generation tokens of Model 5 (\(2\text{D-RoPE} + R=3 + k=16\)) on the 20-digit cascading carry \(99\dots99 + 1\) reveals the following:
 \end{enumerate}
 
-\begin{verbatim}
-<THINK>(0+9+1)=10(1+9+0)=10...(20 cols)...(1+9+0)=10(1+0+0)=01</THINK>=1[19 zeros]<EOS>
-\end{verbatim}
+\begin{quote}\footnotesize\ttfamily\raggedright
+\textless{}THINK\textgreater{}(0+9+1)=10(1+9+0)=10\allowbreak\ ...(20\ cols)...\allowbreak(1+9+0)=10(1+0+0)=01\textless{}/THINK\textgreater{}=1[19\ zeros]\textless{}EOS\textgreater{}
+\end{quote}
 
 Inside \texttt{\textless{}THINK\textgreater{}...\textless{}/THINK\textgreater{}}, Model 5's scratchpad was correct across all columns in the 14 test cases. The error is an \emph{off-by-one readout termination} after \texttt{\textless{}/THINK\textgreater{}=}, where the model emits 19 zeros instead of 20 before \texttt{\textless{}EOS\textgreater{}}. Because the answer-digit coordinates are derived from the scratchpad column count via \(p=\max(0, C-1-i)\) (Section 3.3), the model itself must decide where the answer ends. Two plausible (untested) hypotheses for this off-by-one error are: (a) the clamp \(p=\max(0, C-1-i)\) assigns \(p=0\) to both the true units digit (\(i=C-1\)) and any extra overflow digit (\(i \ge C\)), making the last answer digit and the post-answer position share the same macro coordinate \(p=0\); and (b) after shift masking moves \(p>0\) by \(\Delta \in [0, 16]\) while \(p=0\) stays fixed, the \(p=1 \to p=0\) boundary is under-trained at 12.8 epochs. When the exact same architecture is trained for 64 epochs on a 1,000-sample pool (\texttt{CBT-100k\ Ref}, 4.24M tokens) or scaled to \textbf{CBT-18.95M} (247.3M tokens), the readout error disappeared in our tests (14/14 for \texttt{CBT-100k\ Ref}; 240/240 random 16--50 digit problems with zero off-by-one errors for CBT-18.95M, Table 3B), though repeating a 1,000-sample pool 64 times raises the possibility of overfitting to training length distributions rather than purely resolving boundary attention.
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\onecolumn
-\begin{table*}[p]
+\begin{table*}[!p]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -798,15 +621,12 @@ Unseen 70--100 Digits (\(n=600\) / \(n=45\)) & \textbf{Beyond \(p_{\max}\) \& Co
 \textbf{Pooled Unseen 16--40d (\(n=1,200\) / \(n=180\))} & \textbf{Within \(p_{\max}=47\)} & 0.0\% (0/1200) {[}0.0, 0.3{]}\% & 0.0\% (0/1200) {[}0.0, 0.3{]}\% & 0.0\% (0/1200) {[}0.0, 0.3{]}\% & \textbf{81.4\% (977/1200)} {[}79.1, 83.5{]}\% & \textbf{100.0\% (180/180)} {[}97.9, 100{]}\% \\
 \end{tabular}}
 \end{table*}
-\twocolumn
 
 \subsubsection{\texorpdfstring{2.3 Strictly Equalized 1--15 Digit, \(T=1024\) Comparison with Ruoss et al.~Randomized Positions (12,800 Random Problems)}{2.3 Strictly Equalized 1--15 Digit, T=1024 Comparison with Ruoss et al.~Randomized Positions (12,800 Random Problems)}}\label{strictly-equalized-115-digit-t1024-comparison-with-ruoss-et-al.-randomized-positions-12800-random-problems}
 
 Because the 18.91M 1D baselines in Table 7 were trained on 1--12 digits with a 512-token context window and without position-offset augmentation, we conducted a strictly equalized experiment (\texttt{experiments/run\_equalized\_15d\_1024\_and\_large\_sweep.py}, Table 8B) where all models share the exact same 100k character-level architecture (\(L=2, d_{\text{model}}=64, n_{\text{head}}=4, R=1, V=27\)), the exact same 6,000-sample \textbf{1--15 digit} training set, a \textbf{1024-token context window}, and 3,000 training steps at batch size 32, evaluated on \textbf{200 stratified random multi-carry problems at every length} (\(8, 12, 15, 16, 20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 80, 100\) digits; \(3,200\) problems per model, \(12,800\) problems total): 1. \textbf{Equalized 1D Baselines Suffer In-Distribution Optimization Failure}: In this 100k, 1024-context setting, standard 1D-RoPE (\texttt{loss=0.0982}), 1D-RoPE with translation offsets \(\Delta \sim \mathcal{U}\{0..512\}\) (\texttt{loss=0.0958}), and Ruoss et al.~randomized positions (\texttt{loss=0.2318}) failed to converge in-distribution, scoring \textbf{0.0\% (0/600; 95\% Wilson CI \([0.0, 0.6]\%\))} on seen 8-, 12-, and 15-digit sums. Under flat 1D coordinates in a 1024-token context, 100k parameters and 3,000 steps are insufficient for the attention heads to learn the variable-distance routing required for column scratchpads. This test shows that 1D models fail to optimize the task under equalized conditions, rather than isolating length extrapolation per se; the cleaner evidence for extrapolation failure after successful in-distribution learning is provided by Table 7, where 18.91M 1D-Char achieves 98.4\% in-distribution but collapses to 4.6\% at 14--16d and 0.0\% at 18--20d. 2. \textbf{Why Ruoss et al.~\cite{ruoss2023randomized} Randomized 1D Positions Do Not Substitute for 2D Column Alignment}: Sampling sorted random 1D positions \(0 \le t_1 < t_2 < \dots < t_T < 1024\) during training causes training loss to stall at \texttt{0.2318} and yields \textbf{0.0\% (0/200)} across all tested lengths. In a flat 1D sequence without explicit index hints, the model relies on consistent relative token distances to locate corresponding operand digits; randomizing inter-token 1D gaps destroys those relative offsets, whereas shifting the macro coordinate \(p \leftarrow p + \Delta\) in Decoupled 2D-RoPE preserves \(\Delta p = p_t - p_j = 0\) between every scratchpad column and its matching operand digits. 3. \textbf{Equalized Decoupled 2D-RoPE (\(k=32\)) Extrapolates Across 1,200 Unseen 16--40d Problems}: Under the exact same 100k \(R=1\) architecture and 3,000-step budget, Decoupled 2D-RoPE drops training loss to \texttt{0.0060}, achieves 69.5\% (417/600) on seen 8--15 digits (86.0\% at 15 digits), and achieves \textbf{81.4\% (977/1,200; 95\% Wilson CI \([79.1, 83.5]\%\))} pooled across unseen 16--40 digit random multi-carry problems---including \textbf{92.0\% (184/200)} at 16d and 25d, \textbf{90.0\% (180/200)} at 20d, and \textbf{85.0\% (170/200)} at 30d---before dropping at 45d (\textbf{30.0\%, 60/200}) and reaching 0.0\% at \(d \ge 50\) once column indices exceed the \(p_{\max} = 15 + 32 = 47\) shift-masking support. The lower accuracy of equalized 2D (81.4\% vs.~100\% in CBT-18.95M) reflects partial undertraining at 3,000 steps on 100k parameters.
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -864,13 +684,11 @@ Unseen 70--80 Digits (\(n=400\)) & 0.0\% (0/400) & 0.0\% (0/400) & 0.0\% (0/400)
 
 To isolate the mechanisms governing length generalization, we conducted three targeted empirical ablations (\texttt{experiments/run\_reviewer\_priority\_ablations.py}, Table 8C): 1. \textbf{Causal Shift Sweep (\(k \in \{0, 16, 32, 64\}\))}: By varying the training position-shift offset \(k\), we observe that the accuracy cliff moves strictly with \(p_{\max} = N_{\text{train}} + k\). When \(k=0\) (\(p_{\max}=15\)), accuracy drops precipitously immediately past the training frontier (77.5\% at 16d, 17.0\% at 20d, 0.0\% at 25d). When \(k=16\) (\(p_{\max}=31\)), accuracy exceeds 98.5\% through 30d before falling to 60.5\% at 35d and 0.0\% at 40d. When \(k=64\) (\(p_{\max}=79\)), the model maintains substantial accuracy well beyond 40d (69.0\% at 40d, 60.0\% at 45d, 41.0\% at 50d, and 20.0\% at 55d). This confirms that the bounded extrapolation horizon is not a failure of attention routing, but a direct consequence of the coordinate support envelope encountered during training. 2. \textbf{Place-Only Ablation (\(p\)-Only, \(\tau=0\))}: To test whether the intra-column micro-step coordinate \(\tau\) is necessary or if place alignment alone suffices, we set \(\tau=0\) during both training and inference (\(k=32\)). The \(p\)-only model achieves 99.8\% on seen 8--15 digits and averages 96.2\% across 16--30 digits (100.0\% at 16d, 99.5\% at 20d, 99.0\% at 25d, 97.5\% at 30d, 85.0\% at 35d). This demonstrates that the macro place coordinate \(p\) alone carries the underlying length-invariant algorithmic scaffold. However, full 2D-RoPE provides greater robustness near the cliff boundary (58.0\% vs.~41.5\% at 40d; 30.5\% vs.~9.5\% at 45d), showing that \(\tau\) provides secondary stabilization against phase dispersion during token generation. 3. \textbf{1D Baseline Retraining with Extended Budget}: To determine whether 1D failures in Table 8B were merely artifacts of insufficient training steps, we retrained 1D-RoPE with double the step budget (6,000 steps) and a tuned learning rate (\(\text{LR}=8\times 10^{-4}\)). The retrained model attained only 28.0\% accuracy on 8-digit additions and collapsed to 0.0\% on 12- and 15-digit sums (as well as all unseen lengths). In contrast to 2D models which converge smoothly to zero loss, flat 1D coordinates in long-context scratchpads create an intractable optimization landscape for compact Transformers.
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
 \subsection{3. Architecture, 2D Matrix Embeddings, Tokenizer, and Training Data}\label{architecture-2d-matrix-embeddings-tokenizer-and-training-data}
 
 In this section, we provide a complete technical specification of \textbf{CBT-18.95M}, detailing its hybrid character-control tokenizer, Decoupled 2D-RoPE embeddings, weight-tied recurrent depth, and the exact composition of the training datasets.
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -913,8 +731,6 @@ LM Output Head (\(W_{\text{lm\_head}}\)) & Tied to \(W_{\text{te}}\) & +0 & 0.00
 \textbf{Total Model Parameters} & --- & \textbf{18,946,560} & \textbf{100.00\%} \\
 \end{tabular}}
 \end{table*}
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \subsubsection{\texorpdfstring{3.1 Atomic Character and Structural Control Tokenizer (\(V=115\))}{3.1 Atomic Character and Structural Control Tokenizer (V=115)}}\label{atomic-character-and-structural-control-tokenizer-v115}
 
@@ -969,9 +785,7 @@ We unroll the \(L=6\) physical Transformer blocks across \(R=3\) recurrent passe
 
 The \(1/\sqrt{R}\) factor is a heuristic residual damping choice. We do not derive a variance bound for it, and our ablation (Table 8) shows no benefit from recurrence for addition. We therefore drop the variance comparison between \(1/\sqrt{R}\) scaling and unscaled accumulation that appeared in earlier drafts.
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -1014,8 +828,6 @@ Supervised Target (Masking Rule)
 \end{tabular}}
 \end{table*}
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
 \subsubsection{3.5 Three-Stage Training Data \& 1-Hop Induction Curriculum}\label{three-stage-training-data-1-hop-induction-curriculum}
 
 Table 10 summarizes the three-stage protocol that produced the pre-SFT base \texttt{champion\_base.pt} on dual NVIDIA T4 GPUs (FP16 AMP). The champion checkpoint (\texttt{champion\_final.pt}) starts from that base and is trained further with the V4 SFT curriculum (\texttt{sft\_search.py\ -\/-curriculum\ v4}: 45\% multi-tool, 35\% search copy, 20\% arithmetic replay with 1--25-digit operands, \(k=45\); hyperparameters in the training script, not in Table 10): 1. \textbf{Stage 1 (Joint Pretraining, 45,059 steps, 247.3M tokens, Loss \texttt{0.000094})}: Trained on a 50\%/50\% mixture of 1--15 digit column addition (40\% asymmetric lengths, 25\% symmetric lengths, 20\% cascading carries \(99\dots9+b\), 15\% power-of-ten zero chains) and 6-category structured tool dialogues, with \(-100\) loss masking on prompts and \texttt{\textless{}RESULT\textgreater{}} payloads. 2. \textbf{Stage 2 (Search Copy Induction SFT, 7,000 steps, Loss \texttt{0.004834})}: In early SFT tests, repeating an unfamiliar entity \(X\) inside \texttt{\textless{}THINK\textgreater{}} before calling \texttt{\textless{}CALL\textgreater{}} caused a \emph{2-Hop Copy Bottleneck}, where character n-gram priors hallucinated phonotactic nonces (\texttt{"tomatoes"} \(\to\) \texttt{"smoom"}, \texttt{"bloumplik"} \(\to\) \texttt{"cheat"}). Decoupling \texttt{\textless{}THINK\textgreater{}} into an invariant intent statement and training on 65\% procedurally generated phonotactic pseudowords (\(L_{\text{memorize}} \to \infty\)) forced a \textbf{1-hop induction pointer head} (\(p=2 \to p=0\)) to copy unseen strings character-by-character. 3. \textbf{Stage 3 (All-Tools 1-Hop Annealing SFT, 4,000 steps, LR \(5\times 10^{-5} \to 5\times 10^{-6}\), Loss \texttt{0.007532})}: Extended the 1-hop pointer copy formulation across all 9 tool schemas (\texttt{get\_weather}, \texttt{get\_time}, \texttt{calculator}, \texttt{unit\_convert}, \texttt{database\_query}, \texttt{fetch\_api}, \texttt{create\_event}, \texttt{file\_manager}, and \texttt{search}) alongside a 10\% 1--15 digit math replay buffer, achieving \textbf{100.0\% (26/26) tool routing}, \textbf{96.2\% (25/26) exact argument extraction}, and \textbf{100.0\% 1--50 digit sum extrapolation}.
@@ -1023,8 +835,6 @@ Table 10 summarizes the three-stage protocol that produced the pre-SFT base \tex
 \subsubsection{3.6 Hyperparameters and Release}\label{hyperparameters-and-release}
 
 Defaults in the training code (\texttt{train\_and\_eval.py} and \texttt{sft\_search.py} under \texttt{champion\_model/scaled\_t4/}): AdamW with weight decay 0.01, peak learning rate \(10^{-3}\) with cosine decay, gradient-norm clipping at 1.0, per-GPU batch size 32 on 2 GPUs, context length (block size) 1024 tokens with up to 4096 coordinate indices, \(k=32\) shift range, \(R=3\), FP16 autocast with gradient scaling. Stage 3 SFT uses a learning rate from \(5\times10^{-5}\) to \(5\times10^{-6}\). At \(\approx 14.3\) characters per digit, a 50-digit trace requires \(\approx 715\) tokens (fitting within CBT's 1024 context window, but exceeding the 512-token window of the 12-digit baselines). Traces for 25 digits (\(\approx 360\) tokens) and 35 digits (\(\approx 500\) tokens) fit within 512 tokens, where the 12-digit baselines fail from positional drift rather than context clipping. At 70 digits (\(\approx 1000\) tokens) and 80 digits (\(\approx 1149\) tokens), traces approach or exceed 1024 tokens, confounding arithmetic accuracy with context truncation. The code, data generators, and evaluation scripts are available at \href{https://github.com/NeithanT/CBT}{github.com/NeithanT/CBT}, and model checkpoints are hosted at \href{https://huggingface.co/Neithanvarvas/CBT}{huggingface.co/Neithanvarvas/CBT} (primary checkpoint \texttt{champion\_final.pt} SHA256: \texttt{79d908d3..\allowbreak{}.ccaa}; 18.91M 1D-Char \texttt{model\_1\_final.pt} SHA256: \texttt{06411d79..\allowbreak{}.0c1f}; 1.56M HRM-RoPE \texttt{hrm\_rope\_1000\_examples.pt} SHA256: \texttt{18515686..\allowbreak{}.f6ee}).
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \subsection{4. Discussion, Limitations, and Future Horizons}\label{discussion-limitations-and-future-horizons}
 
@@ -1042,13 +852,9 @@ However, at compact scales (\textbf{100k to 18.95M parameters}), individual forw
 
 While CBT-18.95M shows that placing characters on a hand-assigned 2D coordinate grid \((p, \tau)\) yields 100.0\% accuracy (180/180) on random 16--40 digit sums, 100.0\% (240/240) across 16--50 digits, and 100.0\% (20/20) at 55 digits (70.0\% at 60 digits) before degrading at 60 digits, with failures already appearing before the \(p_{\max} = N_{\text{train}} + k = 70\) shift-masking horizon (Table 3B), our OOD and ablation experiments leave several questions open: 1. \textbf{Sensitivity to Epoch Reinforcement and Boundary Coordinates}: As shown in our 100k component ablations (Table 8), while several combinations of 2D-RoPE and recurrence achieved identical 78.6\% strict match at 12.8 epochs, the off-by-one trailing zero readout error at the \(p=1 \to p=0\) boundary disappeared in our runs with higher epoch density (64 epochs on a 1,000-sample pool) or larger capacity (18.95M); however, these single-run comparisons do not isolate whether the fix came from boundary exposure, memorization of the small pool, or model scale. 2. \textbf{Multi-Word OOD Pointer Spans and General Algorithms}: In zero-shot OOD testing (Table 5), two-word capitalized proper nouns (\texttt{"Buenos\ Aires"} \(\to\) \texttt{"Buris"}) still experience partial compression, and our algorithmic generalization scope here focused on \(\mathcal{O}(N)\) column sums rather than \(\mathcal{O}(N^2)\) multiplication or arbitrary graph algorithms. 3. \textbf{Learned Coordinates and Other Tasks}: Emitting hundreds of scratchpad characters is an inefficient simulation of an ALU, the coordinates are hand-assigned, and extrapolation is bounded by the shift-masked coordinate support \(p_{\max} = N_{\text{train}} + k\) (Table 3B). Important next steps are learning or inferring \((p, \tau)\), testing on a second task whose coordinates are not trivial (multiplication, sorting, string reversal), running multi-seed training, and comparing against equalized 1D baselines with randomized positions, index hints, and tuned Abacus embeddings \cite{ruoss2023randomized,zhou2024transformers,duan2023interpolation,fan2024looped}.
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
 \subsection{5. Conclusion}\label{conclusion}
 
 Starting from the failure of a standard 18.91M-parameter Transformer and eight architectural baselines on unseen 18- to 20-digit sums (\textbf{0.0\% extrapolation at 18--20 digits}, despite 4.6--18.7\% on moderate 14--16 digit sums), our experiments suggest that position geometry is the dominant factor (character-level 1D-RoPE: 2.3\% across 14--20d; character-level 2D: 100\%), with subword tokenization secondary. We studied the \textbf{Character-Based Transformer (CBT)}, which generates atomic characters and structural control tags on a two-dimensional coordinate matrix \((p, \tau)\) via \textbf{Decoupled 2D-RoPE} and weight-tied recurrent depth (\(R=3\), which our ablation found unnecessary for addition). Trained strictly on 1- to 15-digit sums with \(k=32\) shift masking (\(p_{\max}=47\)) and multi-tool dialogues, \textbf{CBT-18.95M} (\texttt{champion\_final.pt}) solves 20/20 structured 16--50 digit sums, achieves \textbf{180/180 (100.0\%)} on random multi-carry sums across 16--40 digits and \textbf{237/240 (98.8\%)} across 16--50 digits (degrading beyond \(p_{\max}=47\) from 90.0\% at 55d to 45.0\% at 60d and 0.0\% at 80--100d), routes 26/26 tool cases (25/26 exact arguments, on templates shared with training), and routes 16/18 OOD prompts, of which 8/16 (50.0\%) have exact arguments. Recurrent depth gave no measurable benefit for addition in our 100k ablation. Ultimately, our findings show that while 2D embeddings and character tokenization achieve high performance with exceptional \textbf{memory efficiency}, character-by-character recurrence is \textbf{not compute-efficient} at scale---meaning current subword LLMs remain well-suited for general cloud AI, whereas CBT is a candidate design for memory-constrained local tool-calling agents and a starting point for studying coordinate-aware architectures, pending the broader tests listed above.
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \subsection{Disclaimer: Use of AI and Compute Infrastructure}\label{disclaimer-use-of-ai-and-compute-infrastructure}
 
@@ -1059,8 +865,6 @@ Starting from the failure of a standard 18.91M-parameter Transformer and eight a
 \item
   \textbf{Compute Hardware}: All model pretraining, supervised fine-tuning (SFT), and isolated component ablation runs reported in this paper were executed on \textbf{Kaggle's NVIDIA Tesla T4 GPUs} (16 GB GDDR6 VRAM, Turing \texttt{sm\_75} architecture) using PyTorch native FP16 automatic mixed precision (\texttt{torch.float16}).
 \end{itemize}
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 
 \bibliographystyle{unsrt}
