@@ -64,3 +64,8 @@ Thumbs.db
 *.fdb_latexmk
 *.synctex.gz
 
+
+# paper build byproducts
+paper/*.bbl
+paper/*.blg
+paper/RESEARCH_PAPER.pdf
