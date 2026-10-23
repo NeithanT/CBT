@@ -51,7 +51,7 @@
         \end{center}
         \vspace{-0.4em}
         \small
-        \noindent Character-level Transformers, which avoid subword digit merging, still fail to extrapolate multi-digit addition under standard 1D positional encodings (scoring 4.6--18.7\% on 14--16 digits and collapsing to 0.0\% on 18- to 20-digit sums across 1D baselines in our experiments). We show that supplying place-value coordinates through \textbf{Decoupled 2D-RoPE} removes this failure at small scale, and that the same coordinate scheme extends to multi-turn tool-calling dialogues without degrading them. In the 18.95M-parameter \textbf{Character-Based Transformer (CBT-18.95M)}, coordinates are assigned by a deterministic rule-based parser within the forward pass, coupled with coordinate shift masking and weight-tied recurrence ($R=3$, adopted as an architectural choice for parameter-efficient depth rather than an addition-specific mechanism). Evaluated on single training runs, CBT-18.95M achieves 100\% on seen 1--15 digit additions, 100.0\% (180/180) zero-shot exact match on unseen 16--40 digit random multi-carry sums within shifted coordinate support ($p \le 47$), 95.0\% (57/60) at the support boundary (45 and 50 digits; pooled 98.8\%, 237/240 on 16--50 digits), and 100\% (26/26) structured tool dispatch on template-matched phrasing (50.0\% exact match on out-of-distribution entity copying) within a compact 36\,MB FP16 weight footprint (running at 141--394 character tokens/sec batched and 1.1--5.3 tokens/sec single-stream on CPU with an unoptimized Python coordinate parser).
+        \noindent Character-level Transformers, which avoid subword digit merging, still fail to extrapolate multi-digit addition under standard 1D positional encodings (scoring 4.6--18.7\% on 14--16 digits and collapsing to 0.0\% on 18- to 20-digit sums across 1D baselines in our experiments). We show that supplying place-value coordinates through \textbf{Decoupled 2D-RoPE} removes this failure at small scale, and that the same coordinate scheme extends to multi-turn tool-calling dialogues without degrading them. In the 18.95M-parameter \textbf{Character-Based Transformer (CBT-18.95M)}, coordinates are assigned by a deterministic rule-based parser within the forward pass, coupled with coordinate shift masking and weight-tied recurrence ($R=3$, adopted as an architectural choice for parameter-efficient depth rather than an addition-specific mechanism). Evaluated on single training runs, CBT-18.95M achieves 100\% on seen 1--15 digit additions, 100.0\% (180/180) zero-shot exact match on unseen 16--40 digit random multi-carry sums within shifted coordinate support ($p \le 47$), 95.0\% (57/60) at the support boundary (45 and 50 digits; pooled 98.8\%, 237/240 on 16--50 digits), and 100\% (26/26) structured tool dispatch on template-matched phrasing (50.0\% exact match on out-of-distribution entity copying) within a compact 36\,MB FP16 weight footprint (running at 141--394 character tokens/sec batched and 1.1--5.3 tokens/sec single-stream on CPU with an unoptimized Python coordinate parser). A second SFT run (v2, Section~\ref{sec:v2}) raises exact argument copying on 30 entity-disjoint unseen prompts from 13.3\% to 56.7\% (95\% CI {$[39.2, 72.6]\%$}, not shown to exceed 50\%), at the cost of lower routing on the 26-case tool suite (80.8\%).
       \end{minipage}
     \end{center}
     \vspace{1.4em}
@@ -521,6 +521,38 @@ To rigorously isolate the mechanisms governing length generalization, we conduct
     \item \textbf{1D Baseline Retraining with Extended Budget}: To determine whether 1D failures in Table~\ref{tab:equalized_15d_1024} were merely artifacts of insufficient training steps, we retrained 1D-RoPE with double the step budget (6,000 steps) and a tuned learning rate ($\mathrm{LR}=8\times 10^{-4}$). The retrained model attained only $28.0\%$ accuracy on 8-digit additions and collapsed to $0.0\%$ on 12- and 15-digit sums (as well as all unseen lengths). In contrast to 2D models which converge smoothly to zero loss, flat 1D coordinates in long-context scratchpads create an intractable optimization landscape for compact Transformers.
 \end{enumerate}
 
+\subsection{CBT-18.95M v2: Revised Tool SFT and Wider Shift Support}
+\label{sec:v2}
+
+We trained a second checkpoint, \texttt{champion\_v2\_final.pt} (SHA256 \texttt{634bf18e...3a13}; 12,000 SFT steps, final loss \texttt{0.0034}, cosine LR $5\times10^{-5} \to 2\times10^{-6}$), with the same architecture but a wider shift range $k=45$ ($p_{\max}=70$) and a revised tool curriculum (V4) that adds more entities and phrasings. Full numbers are in \texttt{results/champion\_v2\_performance\_report.md}. Evaluation is single-run and greedy.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{CBT-18.95M v1 (\texttt{champion\_final.pt}) vs.\ v2 (\texttt{champion\_v2\_final.pt})}. The 30-prompt unseen set has zero entity overlap with training lists; the 18-prompt set does not.}
+\label{tab:v2}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Metric} & \textbf{v1} & \textbf{v2} & \textbf{Note} \\
+\midrule
+Random sums, 16--50d & 237/240 (98.8\%) & 80/80 (100.0\%) & Fisher $p=1.000$ \\
+Random sums, 55d & 18/20 (90.0\%) & 10/10 (100.0\%) & $n=10$/len for v2 \\
+26-case tools, routing & 26/26 (100.0\%) & 21/26 (80.8\%) & v1 tuned on suite \\
+26-case tools, exact args & 25/26 (96.2\%) & 19/26 (73.1\%) & \\
+18-prompt OOD, exact & 8/18 (44.4\%) & 16/18 (88.9\%) & entity leakage \\
+30-prompt unseen, routing & 28/30 (93.3\%) & 29/30 (96.7\%) & $p=1.000$ \\
+\textbf{30-prompt unseen, exact} & 4/30 (13.3\%) & \textbf{17/30 (56.7\%)} & Fisher $p=0.0008$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+The 30-prompt set (\texttt{benchmarks/evaluate\_unseen\_ood.py}) was checked to have zero overlap with the training city, search-entity, and search-fact lists, so it is the only OOD comparison in this paper free of entity leakage. On it, v2 improves exact argument copying from 13.3\% to 56.7\% (CI $[39.2, 72.6]\%$), with the largest gains on science terms (1/6 to 5/6) and foods/artifacts (2/6 to 5/6), and smaller gains on cities (0/6 to 2/6), historical figures (0/6 to 1/6), and nonce words (1/6 to 4/6). The v2 interval spans 50\%, and a one-sided binomial test against 50\% gives $p=0.29$, so we do not claim v2 copies more than half of unseen arguments.
+
+Arithmetic is unchanged within statistical resolution (100.0\% on 90 random problems at 16--55 digits, $n=10$ per length, per-length CI lower bound 72.2\%). We did not extend the v2 sweep past 55 digits, so the benefit of $p_{\max}=70$ over $p_{\max}=47$ is untested beyond 55 digits.
+
+v2 regresses on structured tool cases: \texttt{database\_query}, \texttt{fetch\_api}, \texttt{create\_event}, and \texttt{file\_manager} each fail their single test case, ``Hello, how are you today?'' triggers a spurious \texttt{get\_weather} call, and an embedded digit (\texttt{crispr cas9}) still causes a mis-route. v2 is therefore better at copying unseen entities but worse at routing rarer tool schemas, and v1 remains the better model for the 26-case suite; that regression partly reflects v1 having been tuned on that suite, so the two rows are not directly comparable.
+
 \section{Architecture, 2D Matrix Embeddings, Tokenizer, and Training Data}
 \label{sec:architecture}
 
@@ -668,7 +700,7 @@ Table~\ref{tab:training_data_spec} summarizes the three-stage training protocol 
 \end{enumerate}
 
 \subsection{Hyperparameters and Release}
-\noindent Defaults in the training code (\texttt{train\_and\_eval.py} and \texttt{sft\_search.py} under \texttt{champion\_model/scaled\_t4/}): AdamW with weight decay 0.01, peak learning rate $10^{-3}$ with cosine decay, gradient-norm clipping at 1.0, per-GPU batch size 32 on 2 GPUs, context length (block size) 1024 tokens with up to 4096 coordinate indices, $k=32$ shift range, $R=3$, FP16 autocast with gradient scaling. Stage 3 SFT uses a learning rate from $5\times10^{-5}$ to $5\times10^{-6}$. At $\approx 14.3$ characters per digit, a 50-digit trace requires $\approx 715$ tokens (fitting within CBT's 1024 context window, but exceeding the 512-token window of the 12-digit baselines). Traces for 25 digits ($\approx 360$ tokens) and 35 digits ($\approx 500$ tokens) fit within 512 tokens, where the 12-digit baselines fail from positional drift rather than context clipping. At 70 digits ($\approx 1000$ tokens) and 80 digits ($\approx 1149$ tokens), traces approach or exceed 1024 tokens, confounding arithmetic accuracy with context truncation. The code, data generators, and evaluation scripts are available at \url{https://github.com/NeithanT/CBT}, and model checkpoints are hosted at \url{https://huggingface.co/Neithanvarvas/CBT} (primary checkpoint \texttt{champion\_final.pt} SHA256: \texttt{79d908d3...ccaa}; 18.91M 1D-Char \texttt{model\_1\_final.pt} SHA256: \texttt{06411d79...0c1f}; 1.56M HRM-RoPE \texttt{hrm\_rope\_1000\_examples.pt} SHA256: \texttt{18515686...f6ee}).
+\noindent Defaults in the training code (\texttt{train\_and\_eval.py} and \texttt{sft\_search.py} under \texttt{champion\_model/scaled\_t4/}): AdamW with weight decay 0.01, peak learning rate $10^{-3}$ with cosine decay, gradient-norm clipping at 1.0, per-GPU batch size 32 on 2 GPUs, context length (block size) 1024 tokens with up to 4096 coordinate indices, $k=32$ shift range, $R=3$, FP16 autocast with gradient scaling. Stage 3 SFT uses a learning rate from $5\times10^{-5}$ to $5\times10^{-6}$. At $\approx 14.3$ characters per digit, a 50-digit trace requires $\approx 715$ tokens (fitting within CBT's 1024 context window, but exceeding the 512-token window of the 12-digit baselines). Traces for 25 digits ($\approx 360$ tokens) and 35 digits ($\approx 500$ tokens) fit within 512 tokens, where the 12-digit baselines fail from positional drift rather than context clipping. At 70 digits ($\approx 1000$ tokens) and 80 digits ($\approx 1149$ tokens), traces approach or exceed 1024 tokens, confounding arithmetic accuracy with context truncation. The code, data generators, and evaluation scripts are available at \url{https://github.com/NeithanT/CBT}, and model checkpoints are hosted at \url{https://huggingface.co/Neithanvarvas/CBT} (primary checkpoint \texttt{champion\_final.pt} SHA256: \texttt{79d908d3...ccaa}; v2 checkpoint \texttt{champion\_v2\_final.pt} SHA256: \texttt{634bf18e...3a13}; 18.91M 1D-Char \texttt{model\_1\_final.pt} SHA256: \texttt{06411d79...0c1f}; 1.56M HRM-RoPE \texttt{hrm\_rope\_1000\_examples.pt} SHA256: \texttt{18515686...f6ee}).
 
 \section{Discussion, Limitations, and Future Horizons}
 
