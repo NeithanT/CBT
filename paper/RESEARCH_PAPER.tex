@@ -146,48 +146,38 @@ We first present the evaluation of the final \textbf{CBT-18.95M} checkpoint (\te
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-{\small \textbf{Table 2: Executive Benchmark Summary of CBT-18.95M (\texttt{champion\_final.pt})}\\
-Scores are raw accuracies with 95\% Wilson confidence intervals (no pass/fail threshold is applied). Arithmetic rows use teacher-forced greedy agreement with the gold scratchpad, equivalent to greedy reproduction of the sum; the sweep rows use free greedy decoding. OOD exact match is the headline metric over the 18 fresh prompts of Table 5.}\par\medskip
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{>{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1429}}
-  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1786}}
-  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1786}}
-  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1786}}
-  >{\centering\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1786}}}
+\renewcommand{\arraystretch}{1.25}
+\caption*{\textbf{Table 2: Executive Benchmark Summary of CBT-18.95M (\texttt{champion\_final.pt})}
+\par\vspace{2pt}
+{\small Scores are raw accuracies with 95\% Wilson confidence intervals (no pass/fail threshold is applied). Arithmetic rows use teacher-forced greedy agreement with the gold scratchpad, equivalent to greedy reproduction of the sum; the sweep rows use free greedy decoding. OOD exact match is the headline metric over the 18 fresh prompts of Table 5.}\par\medskip}\par\vspace{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.65in}>{\raggedright\arraybackslash}p{1.4in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.5in}>{\raggedright\arraybackslash}p{0.9in}@{}}
 \toprule
-\begin{minipage}[b]{\linewidth}\raggedright
-Capability Domain
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Benchmark Suite / Evaluation Metric
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-Scope / Test Cases
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-Training Exposure
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-Final Score
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-95\% Wilson CI
-\end{minipage} \\
+Benchmark suite / metric & Scope / test cases & Training exposure & Final score & 95\% Wilson CI \\
 \midrule
-
+\multicolumn{5}{l}{\textbf{1. Standalone sums (2D math)}} \\
+\addlinespace[1pt]
+Tier 1: in-distribution column addition & 8, 12, 15 digits ($n=90$; 30 per length) & \textbf{Seen (1--25d replay)} & \textbf{98.9\% (89/90)} & [94.0, 99.8]\% \\
+Tier 2: structured cascades and boundary cases & 16--50 digits ($n=18$, incl.\ $99\dots9+1$) & Seen 16--25d; unseen 30--50d & \textbf{100.0\% (18/18)} & [82.4, 100.0]\% \\
+Tier 3: random multi-carry & 16, 20, 25, 30, 35, 40 digits ($n=180$) & Seen 16--25d; unseen 30--40d & \textbf{100.0\% (180/180)} & [97.9, 100.0]\% \\
+Tier 4: random multi-carry at horizon & 45 and 50 digits ($n=60$) & \textbf{Unseen} (+20 to +25d over replay) & \textbf{100.0\% (60/60)} & [94.0, 100.0]\% \\
+\emph{Pooled random multi-carry (16--50 digits)} & \emph{8 lengths $\times$ 30 cases ($n=240$)} & \emph{Mixed (seen 16--25d, unseen 30--50d)} & \textbf{\emph{100.0\% (240/240)}} & \emph{[98.4, 100.0]\%} \\
+Tier 5: beyond 50 digits (sweep) & 55d ($n=20$), 60d ($n=20$), 70d ($n=15$), 80d and 100d ($n=10$ each) & Unseen; 80--100d exceed $p_{\max}=70$ & 55d: \textbf{100.0\% (20/20)}; 60d: \textbf{70.0\% (14/20)}; 70d: \textbf{40.0\% (6/15)}; 80d, 100d: \textbf{0.0\% (0/10 each)} & See Table 3B \\
+Tier 5b: beyond 50 digits (teacher-forced mix) & 60d and 70d ($n=30$ per length) & Unseen & 60d: \textbf{80.0\% (24/30)}; 70d: \textbf{80.0\% (24/30)} & [62.7, 90.5]\% \\
+\midrule
+\multicolumn{5}{l}{\textbf{2. Multi-tool and search suite}} \\
+\addlinespace[1pt]
+Multi-domain structured tool benchmark & 90 dialogues, 6 categories & Seen tool schemas (generator seed 999) & \textbf{100.0\% (90/90)} & [95.9, 100.0]\% \\
+Phrasing and edge-case routing (9 schemas) & 26 phrasing and edge cases & Varied prepositions; audited fresh entities & \textbf{80.8\% (21/26)} & [62.1, 91.5]\% \\
+Phrasing and edge-case exact arguments & 26 phrasing and edge cases & 1-hop pointer copy from \texttt{\textless{}USER\textgreater{}} & \textbf{50.0\% (13/26)} & [32.1, 67.9]\% \\
+\midrule
+\multicolumn{5}{l}{\textbf{3. Zero-shot OOD queries}} \\
+\addlinespace[1pt]
+OOD syntactic tag completion (\texttt{\textless{}THINK\textgreater{}...\textless{}CALL\textgreater{}}) & 18 fresh prompts & Unseen prompts and entities & \textbf{100.0\% (18/18)} & [82.4, 100.0]\% \\
+OOD tool selection (routing) & 18 fresh prompts & Unseen entities & \textbf{100.0\% (18/18)} & [82.4, 100.0]\% \\
+OOD 1-hop character copy, \textbf{exact match (headline)} & 18 fresh prompts & Unseen entities & \textbf{55.6\% (10/18)} & [33.7, 75.4]\% \\
+Unseen-30 head-to-head, exact match & 30 unseen cases & champion vs.\ pre-SFT base \texttt{champion\_base.pt} & \textbf{56.7\% (17/30)} (pre-SFT base 13.3\%, 4/30) & [39.2, 72.6]\% \\
 \bottomrule
-
-\textbf{1. Standalone Sums (2D Math)} & Tier 1: In-Distribution Column Addition & 8, 12, 15 Digits (\(n=90\); 30/len) & \textbf{Seen (1--25d replay)} & \textbf{98.9\% (89/90)} & {[}94.0, 99.8{]}\% \\
-& Tier 2: Structured Cascades \& Boundary Cases & 16--50 Digits (\(n=18\), incl.~\(99\dots9+1\)) & Seen 16--25d; unseen 30--50d & \textbf{100.0\% (18/18)} & {[}82.4, 100.0{]}\% \\
-& Tier 3: Random Multi-Carry & 16, 20, 25, 30, 35, 40 Digits (\(n=180\)) & Seen 16--25d; unseen 30--40d & \textbf{100.0\% (180/180)} & {[}97.9, 100.0{]}\% \\
-& Tier 4: Random Multi-Carry at Horizon & 45 \& 50 Digits (\(n=60\)) & \textbf{Unseen (+20 to +25d over replay)} & \textbf{100.0\% (60/60)} & {[}94.0, 100.0{]}\% \\
-& \emph{Pooled Random Multi-Carry (16--50 Digits)} & \emph{8 Lengths \(\times\) 30 Cases (\(n=240\))} & \textbf{\emph{Mixed (seen 16--25d, unseen 30--50d)}} & \textbf{\emph{100.0\% (240/240)}} & \emph{{[}98.4, 100.0{]}\%} \\
-& Tier 5: Beyond 50 Digits (sweep) & 55d (\(n=20\)), 60d (\(n=20\)), 70d (\(n=15\)), 80d \& 100d (\(n=10\)) & Unseen; 80--100d exceed \(p_{\max}=70\) & 55d: \textbf{100.0\% (20/20)}; 60d: \textbf{70.0\% (14/20)}; 70d: \textbf{40.0\% (6/15)}; 80d \& 100d: \textbf{0.0\%} & See Table 3B \\
-& Tier 5b: Beyond 50 Digits (teacher-forced mix, \(n=30\)/len) & 60d and 70d & Unseen & 60d: \textbf{80.0\% (24/30)}; 70d: \textbf{80.0\% (24/30)} & {[}62.7, 90.5{]}\% \\
-\textbf{2. Multi-Tool \& Search Suite} & Multi-Domain Structured Tool Benchmark & 90 Dialogues, 6 Categories & Seen tool schemas (generator seed 999) & \textbf{100.0\% (90/90)} & {[}95.9, 100.0{]}\% \\
-& Phrasing \& Edge-Case Routing (9 schemas) & 26 Phrasing \& Edge Cases & Varied prepositions; audited fresh entities & \textbf{80.8\% (21/26)} & {[}62.1, 91.5{]}\% \\
-& Phrasing \& Edge-Case Exact Arguments & 26 Phrasing \& Edge Cases & 1-Hop pointer copy from \texttt{\textless{}USER\textgreater{}} & \textbf{50.0\% (13/26)} & {[}32.1, 67.9{]}\% \\
-\textbf{3. Zero-Shot OOD Queries} & OOD Syntactic Tag Completion (\texttt{\textless{}THINK\textgreater{}...\textless{}CALL\textgreater{}}) & 18 Fresh Prompts & Unseen prompts and entities & \textbf{100.0\% (18/18)} & {[}82.4, 100.0{]}\% \\
-& OOD Tool Selection (routing) & 18 Fresh Prompts & Unseen entities & \textbf{100.0\% (18/18)} & {[}82.4, 100.0{]}\% \\
-& OOD 1-Hop Character Copy, \textbf{exact match (headline)} & 18 Fresh Prompts & Unseen entities & \textbf{55.6\% (10/18)} & {[}33.7, 75.4{]}\% \\
-& Unseen-30 Head-to-Head, exact match & 30 Unseen Cases & champion vs.~pre-SFT base \texttt{champion\_base.pt} & \textbf{56.7\% (17/30)} (pre-SFT base 13.3\%, 4/30) & {[}39.2, 72.6{]}\% \\
-\end{tabular}}
+\end{tabular}
 \end{table*}
 
 \begin{table*}[!p]
