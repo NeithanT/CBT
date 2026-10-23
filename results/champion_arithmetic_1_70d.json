@@ -1,0 +1,296 @@
+{
+  "checkpoint": "champion_model/scaled_t4/checkpoints/champion_final.pt",
+  "max_train_operand_digits": 25,
+  "arithmetic": {
+    "per_length": {
+      "8": {
+        "digits": 8,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 8.28
+      },
+      "12": {
+        "digits": 12,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 11.26
+      },
+      "15": {
+        "digits": 15,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 29,
+        "exact_ci": [
+          83.3,
+          99.4
+        ],
+        "think_exact": 29,
+        "think_ci": [
+          83.3,
+          99.4
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 13.16
+      },
+      "16": {
+        "digits": 16,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 14.35
+      },
+      "18": {
+        "digits": 18,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 16.18
+      },
+      "20": {
+        "digits": 20,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 17.11
+      },
+      "25": {
+        "digits": 25,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 21.52
+      },
+      "30": {
+        "digits": 30,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 27.89
+      },
+      "35": {
+        "digits": 35,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 29.13
+      },
+      "40": {
+        "digits": 40,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 38.62
+      },
+      "45": {
+        "digits": 45,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 45.8
+      },
+      "50": {
+        "digits": 50,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 53.3
+      },
+      "55": {
+        "digits": 55,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 66.76
+      },
+      "60": {
+        "digits": 60,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 24,
+        "exact_ci": [
+          62.7,
+          90.5
+        ],
+        "think_exact": 24,
+        "think_ci": [
+          62.7,
+          90.5
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 91.17
+      },
+      "70": {
+        "digits": 70,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 24,
+        "exact_ci": [
+          62.7,
+          90.5
+        ],
+        "think_exact": 24,
+        "think_ci": [
+          62.7,
+          90.5
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 111.13
+      }
+    },
+    "summary": {
+      "unseen": {
+        "n": 240,
+        "exact": 228,
+        "exact_ci": [
+          91.5,
+          97.1
+        ]
+      },
+      "seen": {
+        "n": 210,
+        "exact": 209,
+        "exact_ci": [
+          97.4,
+          99.9
+        ]
+      }
+    }
+  }
+}

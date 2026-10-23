@@ -1,0 +1,17 @@
+{
+  "checkpoint": "champion_model/scaled_t4/checkpoints/champion_final.pt",
+  "max_train_operand_digits": 25,
+  "ood": {
+    "total": 18,
+    "routed": 18,
+    "routing_ci": [
+      82.4,
+      100.0
+    ],
+    "exact_matches": 10,
+    "exact_ci": [
+      33.7,
+      75.4
+    ]
+  }
+}

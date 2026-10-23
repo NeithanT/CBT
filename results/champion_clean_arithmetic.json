@@ -1,0 +1,224 @@
+{
+  "checkpoint": "champion_model/scaled_t4/checkpoints/champion_final.pt",
+  "max_train_operand_digits": 25,
+  "arithmetic": {
+    "per_length": {
+      "20": {
+        "digits": 20,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 52.96
+      },
+      "25": {
+        "digits": 25,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 81.87
+      },
+      "26": {
+        "digits": 26,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 47.94
+      },
+      "30": {
+        "digits": 30,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 57.8
+      },
+      "35": {
+        "digits": 35,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 92.34
+      },
+      "40": {
+        "digits": 40,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 121.42
+      },
+      "45": {
+        "digits": 45,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 109.85
+      },
+      "50": {
+        "digits": 50,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 103.65
+      },
+      "55": {
+        "digits": 55,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 50.13
+      },
+      "60": {
+        "digits": 60,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 24,
+        "exact_ci": [
+          62.7,
+          90.5
+        ],
+        "think_exact": 24,
+        "think_ci": [
+          62.7,
+          90.5
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 70.84
+      },
+      "70": {
+        "digits": 70,
+        "mode": "teacher_forced",
+        "seen_in_training": false,
+        "n": 30,
+        "exact": 24,
+        "exact_ci": [
+          62.7,
+          90.5
+        ],
+        "think_exact": 24,
+        "think_ci": [
+          62.7,
+          90.5
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 86.8
+      }
+    },
+    "summary": {
+      "unseen": {
+        "n": 270,
+        "exact": 258,
+        "exact_ci": [
+          92.4,
+          97.4
+        ]
+      },
+      "seen": {
+        "n": 60,
+        "exact": 60,
+        "exact_ci": [
+          94.0,
+          100.0
+        ]
+      }
+    }
+  }
+}

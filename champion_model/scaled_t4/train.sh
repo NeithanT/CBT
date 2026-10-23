@@ -48,8 +48,8 @@ if [ -n "$CKPT_INPUT" ] && [ -f "$CKPT_INPUT" ]; then
 else
     CANDIDATES=(
         "$CKPT_INPUT"
-        "$DEFAULT_CKPT_DIR/champion_final.pt"
-        "champion_model/checkpoints/champion_final.pt"
+        "archive/checkpoints/champion_base.pt"
+        "archive/checkpoints/champion_base.pt"
         "$DEFAULT_CKPT_DIR/scaled_t4_sft_all_tools.pt"
         "$DEFAULT_CKPT_DIR/scaled_t4_sft_search.pt"
         "checkpoints/scaled_t4_sft_search.pt"
@@ -84,20 +84,23 @@ show_help() {
     echo "  MODE             Operation mode: 'sft', 'pretrain', 'eval', 'demo' (Default: sft)"
     echo ""
     echo "Examples:"
-    echo "  # 1. Run Universal Robust Annealing SFT from champion_final.pt (Default: 12000 steps)"
-    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_final.pt"
+    echo "  # 1. Run Universal Robust Annealing SFT from champion_base.pt (Default: 12000 steps)"
+    echo "  ./train.sh archive/checkpoints/champion_base.pt"
     echo ""
     echo "  # 2. Run All-Tools Annealing SFT with custom steps"
-    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_final.pt 12000 sft"
+    echo "  ./train.sh archive/checkpoints/champion_base.pt 12000 sft"
+    echo ""
+    echo "  # 2b. Curriculum V5 SFT from champion_final.pt -> champion_v3_final.pt (6.0 h SFT inside a 7 h session)"
+    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_final.pt 200000 sft_v3"
     echo ""
     echo "  # 3. Resume full 10-hour pretraining (e.g., Session 2 up to 100k steps)"
     echo "  ./train.sh /kaggle/working/checkpoints/scaled_t4/scaled_t4_final_timeout_step_45059.pt 100000 pretrain"
     echo ""
     echo "  # 4. Run evaluation benchmark on checkpoint"
-    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_v2_final.pt 0 eval"
+    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_final.pt 0 eval"
     echo ""
     echo "  # 5. Launch interactive terminal"
-    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_v2_final.pt 0 demo"
+    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_final.pt 0 demo"
     echo "================================================================================"
 }
 
@@ -118,7 +121,7 @@ case "$MODE" in
     sft)
         echo "[INFO] Mode: Universal Robust All-Tools & Search Annealing SFT ($STEPS steps)"
         echo "[INFO] Curriculum V4: 45% Multi-Tool + 35% Search Copy + 20% Math Replay (1-25 Digits, k=45)"
-        SAVE_CKPT="$DEFAULT_CKPT_DIR/champion_v2_final.pt"
+        SAVE_CKPT="$DEFAULT_CKPT_DIR/champion_final.pt"
         
         EXTRA_ARGS=()
         if [ -n "$RESOLVED_CKPT" ]; then
@@ -133,6 +136,28 @@ case "$MODE" in
             --save-ckpt "$SAVE_CKPT" \
             --max-keep-ckpts 2 \
             "${EXTRA_ARGS[@]}" \
+            "${@:4}"
+        ;;
+
+    sft_v3)
+        # Curriculum V5 from the champion: time-bounded cosine (anneals fully within --max-hours)
+        echo "[INFO] Mode: Curriculum V5 SFT -> champion_v3 (<= $STEPS steps, 6.0 h wall clock)"
+        V3_BASE="${RESOLVED_CKPT}"
+        if [ -z "$CKPT_INPUT" ] || [ ! -f "$CKPT_INPUT" ]; then
+            V3_BASE="$DEFAULT_CKPT_DIR/champion_final.pt"
+        fi
+        "$PY_BIN" "$BASE_DIR/sft_search.py" \
+            --curriculum v5 \
+            --base-ckpt "$V3_BASE" \
+            --steps "$STEPS" \
+            --batch-size 32 \
+            --lr 5.0e-5 \
+            --k-rand-shift 45 \
+            --max-hours 6.0 \
+            --save-interval 2000 \
+            --probe-interval 2000 \
+            --save-ckpt "$DEFAULT_CKPT_DIR/champion_v3_final.pt" \
+            --max-keep-ckpts 2 \
             "${@:4}"
         ;;
 

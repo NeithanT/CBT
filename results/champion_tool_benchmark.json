@@ -1,0 +1,31 @@
+{
+  "overall_acc": 100.0,
+  "total_passed": 90,
+  "total_cases": 90,
+  "category_stats": {
+    "nested_json_schema": {
+      "total": 12,
+      "pass": 12
+    },
+    "single_tool": {
+      "total": 48,
+      "pass": 48
+    },
+    "error_recovery": {
+      "total": 8,
+      "pass": 8
+    },
+    "no_tool": {
+      "total": 5,
+      "pass": 5
+    },
+    "multi_turn": {
+      "total": 11,
+      "pass": 11
+    },
+    "multi_tool_chain": {
+      "total": 6,
+      "pass": 6
+    }
+  }
+}

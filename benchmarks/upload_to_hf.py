@@ -40,19 +40,19 @@ metrics:
 # 2D Embeddings for Length Generalization in Character-Based Transformers (CBT)
 
 - **GitHub Repository**: [https://github.com/NeithanT/CBT](https://github.com/NeithanT/CBT)
-- **Research Paper**: [RESEARCH_PAPER.md](https://github.com/NeithanT/CBT/blob/main/RESEARCH_PAPER.md) | [Paper PDF](https://github.com/NeithanT/CBT/blob/main/RESEARCH_PAPER.pdf)
+- **Research Paper**: [RESEARCH_PAPER.md](https://github.com/NeithanT/CBT/blob/main/RESEARCH_PAPER.md)
 
 ## 1. Model Overview
 
 **Character-Based Transformer (CBT)** is an 18.95M-parameter character-level Transformer whose tokens carry a rule-assigned two-dimensional (2D) coordinate $(p, \\tau)$ used by **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** alongside **Weight-Tied Recurrent Depth ($R = 3$)**.
 
-Trained strictly on 1- to 15-digit column additions (with random coordinate shift masking $k=32$, exposing macro column coordinates up to $p_{\\max} = 15 + 32 = 47$) and multi-tool dialogues, **CBT-18.95M** (`champion_final.pt`) achieves:
-- **100.0% (20/20; 95% Wilson CI [83.9, 100.0]%)** on structured 16- to 50-digit sums (including 50-digit cascading carry $99\\dots99 + 1$).
-- **100.0% (180/180; 95% Wilson CI [97.9, 100.0]%)** on random multi-carry sums from 16 to 40 digits, and **98.8% (237/240; CI [96.4, 99.6]%)** across 16 to 50 digits (with 238/240 = 99.2% exact `<THINK>` scratchpads and zero `(` delimiter errors).
-- **90.0% (18/20)** at 55 digits before degrading beyond the shift-masked coordinate horizon $p_{\\max}=47$ (45.0% at 60d, 6.7% at 70d, 0.0% at 80–100d).
+Trained on 1- to 25-digit arithmetic replay, multi-tool dialogues, and search copy, with random coordinate shift masking $k=45$ (macro column coordinates up to $p_{\\max} = 25 + 45 = 70$), **CBT-18.95M** (`champion_final.pt`) achieves:
+- **100.0% (240/240; 95% Wilson CI [98.4, 100.0]%)** on random multi-carry sums from 16 to 50 digits, and **100.0% (18/18)** on structured 16- to 50-digit sums (including 50-digit cascading carry $99\\dots99 + 1$). Digits 16–25 are seen in training; 30–50 digits are unseen.
+- **98.9% (89/90)** on in-distribution sums at 8, 12, and 15 digits (the single miss is at 15 digits).
+- **100.0% (20/20)** at 55 digits, then **70.0% (14/20)** at 60 digits, **40.0% (6/15)** at 70 digits, and **0.0%** at 80–100 digits (random sweep). A separate teacher-forced suite gives 80% at both 60 and 70 digits.
 - **Equalized 1–15d, $T=1024$ Control Study (12,800 Random Problems)**: When four equalized 100k models (`1D-RoPE Standard`, `1D-RoPE + Offset`, `1D-RoPE + Ruoss et al. 2023 Randomized Positions`, and `Decoupled 2D-RoPE k=32`) are trained on the exact same 1–15d dataset with $T=1024$ and evaluated on 200 random problems per length up to 100d, all three 1D/Ruoss variants score **0.0% (0/200, CI [0.0, 1.9]%)** across 16–100d, whereas equalized 2D-RoPE achieves **81.4% (977/1,200, CI [79.1, 83.5]%)** across 16–40d (up to 92.0% at 16d and 25d).
-- **100.0% (26/26; CI [87.1, 100.0]%)** tool routing and **96.2% (25/26)** exact argument extraction across 9 tool schemas on phrasing templates shared with training.
-- **88.9% (16/18)** zero-shot OOD tool routing, with **50.0% (8/16)** exact character argument copying (and 68.8% exact or near-exact).
+- **100.0% (90/90)** on a 6-category multi-tool benchmark (the check counts tags only, not argument correctness); **80.8% (21/26)** tool routing and **50.0% (13/26)** exact argument extraction on a 26-case phrasing suite with audited entities.
+- **100.0% (18/18)** zero-shot OOD tool routing, with **55.6% (10/18)** exact argument copying on 18 fresh prompts.
 
 ---
 
@@ -69,7 +69,7 @@ Trained strictly on 1- to 15-digit column additions (with random coordinate shif
 | **Attention Heads (H)** | 8 (Head dimension = 64) |
 | **Max Sequence Length (T)** | 1024 (Coordinate cache up to 4096) |
 | **Positional Embedding** | Decoupled 2D-RoPE (d/2 macro column $p$, d/2 micro step $\\tau$; rule-assigned via `compute_2d_coords`) |
-| **Coordinate Shift Masking (k)** | $k = 32$ ($p_{\\max} = 15 + 32 = 47$ during 1–15d training) |
+| **Coordinate Shift Masking (k)** | $k = 45$ ($p_{\\max} = 25 + 45 = 70$ during 1–25d arithmetic replay) |
 | **Vocabulary Size** | 115 (14 structural control tags + 101 ASCII characters) |
 | **Weight Tying** | W_te == W_lm_head |
 
@@ -79,16 +79,16 @@ Trained strictly on 1- to 15-digit column additions (with random coordinate shif
 
 | Benchmark Suite | Scope / Test Cases | Final Score | 95% Wilson CI |
 | :--- | :--- | :--- | :--- |
-| **1–15 Digit In-Distribution Sums** | Seen in Training (1–15d) | **100.0%** | -- |
-| **16–50 Digit Structured Extrapolation** | 20 Cases (incl. $99\\dots99 + 1$) | **100.0% (20/20)** | [83.9, 100.0]% |
-| **16–40 Digit Random Multi-Carry Sweep** | 6 Lengths $\\times$ 30 Cases ($n=180$, $p \\le 40$) | **100.0% (180/180)** | [97.9, 100.0]% |
-| **45–50 Digit Random Multi-Carry (At $p_{\\max}=47$)** | 2 Lengths $\\times$ 30 Cases ($n=60$; 58/60 Think OK) | **95.0% (57/60)** | [86.3, 98.3]% |
-| **Pooled 16–50 Digit Random Multi-Carry** | 8 Lengths $\\times$ 30 Cases ($n=240$; 238/240 Think OK) | **98.8% (237/240)** | [96.4, 99.6]% |
-| **55–100 Digit Beyond Horizon ($p > 47$)** | 55d: 90.0% (18/20), 60d: 45.0% (9/20), 70d: 6.7%, 80–100d: 0.0% | Bounded by $p_{\\max}=47$ | -- |
-| **Multi-Tool Routing Suite (9 Schemas)** | 26 Template-Matched Cases | **100.0% (26/26)** | [87.1, 100.0]% |
-| **Multi-Tool Exact Argument Extraction** | 26 Template-Matched Cases | **96.2% (25/26)** | [81.1, 99.3]% |
-| **Zero-Shot OOD Tool Selection** | 18 Unseen Prompts | **88.9% (16/18)** | [67.2, 96.9]% |
-| **Zero-Shot OOD Exact Argument Copy** | 16 Correctly Routed OOD Prompts | **50.0% (8/16)** | [28.0, 72.0]% |
+| **In-Distribution Sums (8, 12, 15 Digits)** | Seen in Training | **98.9% (89/90)** | [94.0, 99.8]% |
+| **16–50 Digit Structured Sums** | 18 Cases (incl. $99\\dots99 + 1$) | **100.0% (18/18)** | [82.4, 100.0]% |
+| **16–50 Digit Random Multi-Carry Sweep** | 8 Lengths $\\times$ 30 Cases ($n=240$) | **100.0% (240/240)** | [98.4, 100.0]% |
+| **55–70 Digit Random Sweep** | 55d: 20 cases; 60d: 20; 70d: 15 | 55d: **100.0%**; 60d: **70.0%**; 70d: **40.0%** | 55d [83.9, 100.0]%; 60d [48.1, 85.5]%; 70d [19.8, 64.3]% |
+| **80–100 Digit Random Sweep** | 10 Cases per length | **0.0%** | [0.0, 27.8]% |
+| **Multi-Tool Benchmark (6 Categories)** | 90 Dialogues (tag-presence check) | **100.0% (90/90)** | [95.9, 100.0]% |
+| **Multi-Tool Phrasing Routing** | 26 Audited Cases, 9 Schemas | **80.8% (21/26)** | [62.1, 91.5]% |
+| **Multi-Tool Phrasing Exact Arguments** | 26 Audited Cases | **50.0% (13/26)** | [32.1, 67.9]% |
+| **Zero-Shot OOD Routing** | 18 Fresh Prompts | **100.0% (18/18)** | [82.4, 100.0]% |
+| **Zero-Shot OOD Exact Argument Copy** | 18 Fresh Prompts | **55.6% (10/18)** | [33.7, 75.4]% |
 
 ---
 
@@ -181,9 +181,8 @@ def main():
 
         # 4. Copy research paper and random 16-100d evaluation results
         extra_files = [
-            "RESEARCH_PAPER.pdf",
             "RESEARCH_PAPER.md",
-            "results/random_extrapolation_16_to_100d.json",
+            "results/random_extrapolation_champion_16_to_100d.json",
             "results/equalized_15d_1024_and_ruoss_sweep.json",
         ]
         for ef in extra_files:

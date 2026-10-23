@@ -41,7 +41,7 @@ Standard language models rely on subword BPE tokenization, which clumps arbitrar
 
 A single token like `"45"` fuses the $10^3$ place (`4`) and the $10^2$ place (`5`) into one vector at one 1D index, breaking 1-to-1 place-value alignment between operands (Table 6).
 
-While character-level Transformers avoid these subword merging artifacts and preserve character-level boundaries, they still fail to extrapolate multi-digit addition under standard 1D positional encodings, succumbing to identical phase drift. Having established that Decoupled 2D-RoPE fixes addition collapse by maintaining invariant decimal place-value coordinates, we formulated our central hypothesis: *Supplying place-value coordinates through Decoupled 2D-RoPE directly to atomic characters removes this extrapolation collapse in character-level models, and this exact coordinate scheme can be extended to multi-turn tool-calling dialogues without degrading them.*
+While character-level Transformers avoid these subword merging artifacts and preserve character-level boundaries [21, 22, 23], embedding-free variants that feed fixed one-hot inputs directly into the blocks have matched or outperformed embedding-table models on translation benchmarks [20], and they still fail to extrapolate multi-digit addition under standard 1D positional encodings, succumbing to identical phase drift. Having established that Decoupled 2D-RoPE fixes addition collapse by maintaining invariant decimal place-value coordinates, we formulated our central hypothesis: *Supplying place-value coordinates through Decoupled 2D-RoPE directly to atomic characters removes this extrapolation collapse in character-level models, and this exact coordinate scheme can be extended to multi-turn tool-calling dialogues without degrading them.*
 
 To test this, we unify arithmetic and structured dialogue into a single character representation:
 1. We decompose inputs into **atomic characters** paired with 14 structural discourse tags (e.g., `<USER>`, `<THINK>`, `<CALL>`, `<RESULT>`, `<ANSWER>`).
@@ -76,7 +76,7 @@ Unlike 1D indices $t \in \{0, 1, \dots, T-1\}$ that grow along a flat line, CBT 
 To test this hypothesis and achieve maximal algorithmic and tool performance within a compact edge footprint (< 20M parameters, ~36 MB FP16 weights), we hypothesized the unified **Character-Based Transformer (CBT-18.95M)** architecture by combining four complementary mechanisms:
 1. **Atomic Character Tokenization ($V=115$)**: Preserves exact character boundaries, eliminating subword tokenization chunking and enabling faithful 1-hop pointer copying for tool arguments.
 2. **Decoupled 2D-RoPE**: Rotates half of each attention head with macro row $p$ and the other half with micro column $\tau$, anchoring cross-attention invariant to sequence length in both arithmetic and discourse modes.
-3. **Coordinate Shift Masking ($k=32$)**: Randomly shifts macro coordinates during training, exposing rotary frequencies to an extended coordinate horizon ($p_{\max} = N_{\text{train}} + k = 15 + 32 = 47$) to enable zero-shot extrapolation up to 50 digits.
+3. **Coordinate Shift Masking ($k=45$)**: Randomly shifts macro coordinates during training, exposing rotary frequencies to an extended coordinate horizon ($p_{\max} = N_{\text{train}} + k = 25 + 45 = 70$ for the champion's 1–25-digit arithmetic replay) to enable zero-shot extrapolation beyond the training digit range.
 4. **Weight-Tied Recurrent Depth ($R=3$)**: Unrolls $L=6$ physical Transformer blocks across $R=3$ recurrent passes ($L_{\text{eff}}=18$), adopted as an architectural choice to provide deep non-linear representation within a compact 36 MB FP16 footprint without parameter inflation. As detailed in Section 1.4 and our 100k ablations (Table 8), recurrence is not claimed as an empirically necessary mechanism for addition (which extrapolates under 2D-RoPE alone at $R=1$) or tool routing.
 
 ### 1.4 Scope, Limitations, and Utility on Low-Resource Devices
@@ -86,7 +86,7 @@ To test this hypothesis and achieve maximal algorithmic and tool performance wit
 **Limitations**:
 1. The coordinates $(p,\tau)$ are hand-designed and assigned by a rule-based parser, not learned; the length-generalization result is therefore conditional on correct coordinate assignment (Section 3.3) and demonstrates column-aligned addition with a fixed-template scratchpad rather than general algorithmic induction.
 2. Tool calling is bound to a small set of templates that overlap with training data, the OOD set contains only 18 prompts, near-exact copies are functionally failures, and we do not compare against a fine-tuned small off-the-shelf model.
-3. Tool and 12d-ablation test sets are small (26 and 18 for tools, 14 for Table 8; for arithmetic we supplement our 20 structured cases with a 315-problem random sweep on CBT-18.95M in Table 3B and a 12,800-problem random sweep across four equalized 1–15d, $T=1024$ models in Table 8B), every configuration is a single training run, and we report no seed variance.
+3. Tool and 12d-ablation test sets are small (26 and 18 for tools, 14 for Table 8; for arithmetic we supplement our 18 structured cases with a 315-problem random sweep on CBT-18.95M in Table 3B and a 12,800-problem random sweep across four equalized 1–15d, $T=1024$ models in Table 8B), every configuration is a single training run, and we report no seed variance.
 4. In Table 7, the 18.91M 1D baselines were trained on 1–12 digits with a 512-token context window; because scratchpad traces require $\approx 14.3$ characters per digit, traces for 25 digits ($\approx 360$ tokens) and 35 digits ($\approx 500$ tokens) fit within this 512-token window, where the baselines fail from positional drift rather than context clipping, whereas 50-digit traces ($\approx 715$ tokens) exceed 512 tokens (Table 8B addresses this with equalized 1024-token models). At 70 digits ($\approx 1000$ tokens) and 80 digits ($\approx 1149$ tokens), traces approach or exceed the 1024 context window, confounding arithmetic failure with context truncation. Several Table 7 baselines are strawmen for arithmetic (e.g., naive BPE without digit splitting), and our Abacus baseline (0.0% in-distribution) reflects an under-tuned implementation rather than the method of McLeish et al. [13].
 5. The only algorithmic task is addition; we do not test tasks where coordinates cannot be assigned by a simple parser (such as multiplication or sorting).
 6. On a laptop CPU (Intel Core Ultra 5 125H, FP32), batched KV-cached inference runs at 141–394 tokens/sec (1.1–5.3 tokens/sec uncached single-stream), and we do not benchmark mobile ARM hardware or INT8 quantization.
@@ -98,33 +98,34 @@ To test this hypothesis and achieve maximal algorithmic and tool performance wit
 
 ## 2. Empirical Results
 
-We first present the empirical evaluation of the final converged **CBT-18.95M** checkpoint (`champion_final.pt`, trained across Stage 1 Pretraining, Stage 2 Search Copy SFT, and Stage 3 All-Tools 1-Hop Annealing SFT), demonstrating decent, robust performance at small scale across both long-horizon arithmetic extrapolation and structured tool agency. We then dissect its performance against tokenization ablations, 1D baseline comparisons, and isolated 100k-parameter component ablations. All benchmark evaluations throughout this paper use deterministic greedy decoding ($\text{temperature}=0.0$, $\arg\max$). Across all tables, we explicitly label the **digit ranges seen during training** ($1 \le N \le 15$ for CBT-18.95M; $1 \le N \le 12$ for baselines) versus **unseen zero-shot extrapolation ranges** ($16 \le N \le 100$).
+We first present the evaluation of the final **CBT-18.95M** checkpoint (`champion_final.pt`). It starts from the pre-SFT base `champion_base.pt` (Stage 1 Pretraining, Stage 2 Search Copy SFT, Stage 3 All-Tools 1-Hop SFT) and is further trained with the V4 SFT curriculum (45% multi-tool dialogues, 35% search copy, 20% arithmetic replay with 1–25-digit operands, shift masking $k=45$). Because the replay covers 1–25 digits, **16–25 digits are seen in training for champion, and zero-shot extrapolation begins at 26 digits**; the 1–15 digit framing applies to the pre-SFT base only. The prompts and entities of every champion test below were audited against the champion training corpus. Earlier champion numbers were withdrawn because their test sets overlapped that corpus. All evaluations use deterministic greedy decoding ($\text{temperature}=0.0$, $\arg\max$), and each table labels digit ranges as seen or unseen. We then dissect its performance against tokenization ablations, 1D baseline comparisons, and isolated 100k-parameter component ablations.
 
 ---
 
-**Table 2: Executive Benchmark Summary of Final Converged CBT-18.95M (`champion_final.pt`)**  
-Scores are raw accuracies with 95% Wilson confidence intervals (no pass/fail threshold is applied). Arithmetic extrapolation combines the 20-case structured suite (Table 3) and the 315-problem random multi-carry sweep across 16–100 digits (Table 3B); each model was trained once. The OOD copy rows are computed over the 16 correctly routed prompts of Table 5; exact match is the headline metric.
+**Table 2: Executive Benchmark Summary of CBT-18.95M (`champion_final.pt`)**  
+Scores are raw accuracies with 95% Wilson confidence intervals (no pass/fail threshold is applied). Arithmetic rows use teacher-forced greedy agreement with the gold scratchpad, equivalent to greedy reproduction of the sum; the sweep rows use free greedy decoding. OOD exact match is the headline metric over the 18 fresh prompts of Table 5.
 
 | Capability Domain | Benchmark Suite / Evaluation Metric | Scope / Test Cases | Training Exposure | Final Score | 95% Wilson CI |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| **1. Standalone Sums (2D Math)** | Tier 1: In-Distribution Column Addition | 1–15 Digits ($n=90$; 30/len at 8, 12, 15d) | **Seen in Training (1–15d)** | **100.0% (90/90)** | [95.9, 100.0]% |
-| | Tier 2: Structured Extrapolation | 16–50 Digits ($n=20$, incl. $99\dots9+1$) | **Unseen OOD (+1 to +35d)** | **100.0% (20/20)** | [83.9, 100.0]% |
-| | Tier 3: Random Multi-Carry Extrapolation (Within $p_{\max}=47$) | 16, 20, 25, 30, 35, 40 Digits ($n=180$) | **Unseen OOD (+1 to +25d)** | **100.0% (180/180)** | [97.9, 100.0]% |
-| | Tier 4: Random Multi-Carry at Horizon ($p_{\max}=47$) | 45 & 50 Digits ($n=60$; 58/60 Think OK) | **Unseen OOD (+30 to +35d)** | **95.0% (57/60)** | [86.3, 98.3]% |
-| | *Pooled Random Multi-Carry (16–50 Digits)* | *8 Lengths $\times$ 30 Cases ($n=240$; 238/240 Think)* | ***Unseen OOD (+1 to +35d)*** | ***98.8% (237/240)*** | *[96.4, 99.6]%* |
-| | Tier 5: Beyond Shift-Masking Horizon ($p > 47$) | 55d ($90\%$), 60d ($45\%$), 70d ($6.7\%$), 80–100d ($0\%$) | **Unseen OOD (+40 to +85d, $p>p_{\max}$)** | **See Table 3B** | -- |
-| **2. Multi-Tool & Search Suite** | Multi-Domain Structured Tool Benchmark | 50 Multi-Turn Dialogues | Seen Tool Schemas (6 Domains) | **100.0% (50/50)** | [92.9, 100.0]% |
-| | All-Tools 1-Hop Routing Suite (9 Schemas) | 26 Phrasing & Edge Cases | Varied Prepositions & Nonces | **100.0% (26/26)** | [87.1, 100.0]% |
-| | Multi-Tool Exact Argument & Entity Extraction | 26 Phrasing & Edge Cases | 1-Hop Pointer Copy from `<USER>` | **96.2% (25/26)** | [81.1, 99.3]% |
-| **3. Zero-Shot OOD Queries** | OOD Syntactic Tag Completion (`<THINK>...<CALL>`) | 18 Unseen Domain Prompts | **100% Unseen Prompts/Domains** | **100.0% (18/18)** | [82.4, 100.0]% |
-| | OOD Zero-Shot Tool Selection Accuracy | 18 Unseen Domain Prompts | **Unseen Science/Film/Cities/Units** | **88.9% (16/18)** | [67.2, 96.9]% |
-| | OOD 1-Hop Character Pointer Copy, **exact match (headline)** | 16 Correctly Routed Cases | **Unseen Target Entities** | **50.0% (8/16)** | [28.0, 72.0]% |
-| | secondary: exact or near-exact ($\ge 85\%$ chars) | 16 Correctly Routed Cases | Unseen Target Entities | 68.8% (11/16) | [44.4, 85.8]% |
+| **1. Standalone Sums (2D Math)** | Tier 1: In-Distribution Column Addition | 8, 12, 15 Digits ($n=90$; 30/len) | **Seen (1–25d replay)** | **98.9% (89/90)** | [94.0, 99.8]% |
+| | Tier 2: Structured Cascades & Boundary Cases | 16–50 Digits ($n=18$, incl. $99\dots9+1$) | Seen 16–25d; unseen 30–50d | **100.0% (18/18)** | [82.4, 100.0]% |
+| | Tier 3: Random Multi-Carry | 16, 20, 25, 30, 35, 40 Digits ($n=180$) | Seen 16–25d; unseen 30–40d | **100.0% (180/180)** | [97.9, 100.0]% |
+| | Tier 4: Random Multi-Carry at Horizon | 45 & 50 Digits ($n=60$) | **Unseen (+20 to +25d over replay)** | **100.0% (60/60)** | [94.0, 100.0]% |
+| | *Pooled Random Multi-Carry (16–50 Digits)* | *8 Lengths $\times$ 30 Cases ($n=240$)* | ***Mixed (seen 16–25d, unseen 30–50d)*** | ***100.0% (240/240)*** | *[98.4, 100.0]%* |
+| | Tier 5: Beyond 50 Digits (sweep) | 55d ($n=20$), 60d ($n=20$), 70d ($n=15$), 80d & 100d ($n=10$) | Unseen; 80–100d exceed $p_{\max}=70$ | 55d: **100.0% (20/20)**; 60d: **70.0% (14/20)**; 70d: **40.0% (6/15)**; 80d & 100d: **0.0%** | See Table 3B |
+| | Tier 5b: Beyond 50 Digits (teacher-forced mix, $n=30$/len) | 60d and 70d | Unseen | 60d: **80.0% (24/30)**; 70d: **80.0% (24/30)** | [62.7, 90.5]% |
+| **2. Multi-Tool & Search Suite** | Multi-Domain Structured Tool Benchmark | 90 Dialogues, 6 Categories | Seen tool schemas (generator seed 999) | **100.0% (90/90)** | [95.9, 100.0]% |
+| | Phrasing & Edge-Case Routing (9 schemas) | 26 Phrasing & Edge Cases | Varied prepositions; audited fresh entities | **80.8% (21/26)** | [62.1, 91.5]% |
+| | Phrasing & Edge-Case Exact Arguments | 26 Phrasing & Edge Cases | 1-Hop pointer copy from `<USER>` | **50.0% (13/26)** | [32.1, 67.9]% |
+| **3. Zero-Shot OOD Queries** | OOD Syntactic Tag Completion (`<THINK>...<CALL>`) | 18 Fresh Prompts | Unseen prompts and entities | **100.0% (18/18)** | [82.4, 100.0]% |
+| | OOD Tool Selection (routing) | 18 Fresh Prompts | Unseen entities | **100.0% (18/18)** | [82.4, 100.0]% |
+| | OOD 1-Hop Character Copy, **exact match (headline)** | 18 Fresh Prompts | Unseen entities | **55.6% (10/18)** | [33.7, 75.4]% |
+| | Unseen-30 Head-to-Head, exact match | 30 Unseen Cases | champion vs. pre-SFT base `champion_base.pt` | **56.7% (17/30)** (pre-SFT base 13.3%, 4/30) | champion [39.2, 72.6]% |
 
 ---
 
 **Table 3: Itemized Arithmetic Length Extrapolation Benchmark (1 to 50 Digits), Separating Seen Training Lengths from Unseen Zero-Shot Extrapolation Lengths**  
-Standard 1D-Char and 50k-BPE models (18.91M) and Dual-Loop HRM-RoPE (1.56M) were trained on **1–12 digits** with a 512-token context window; our **CBT-18.95M** was trained on **1–15 digits** with a 1024-token context window. Part II (16–20 digits) is the clean comparison within the 512-token window: HRM-RoPE (1.56M) extrapolates to 20 digits using Decoupled 2D-RoPE without CBT's three-stage curriculum, whereas the 1D models fail. In Part III (25–50 digits), 25-digit traces ($\approx 360$ tokens) and 35-digit traces ($\approx 500$ tokens) fit within the 512-token context window of the 12d baselines, where 1D-Char fails due to positional drift; 1.56M HRM-RoPE was trained without shift masking ($k=0$) and succeeds up to 20 digits, but fails at 25 and 35 digits because $p > 20$ exceeds its unshifted coordinate horizon; only 50-digit traces ($\approx 715$ tokens) exceed 512 tokens. Extending 1D-Char's frequency table to $T=1024$ still fails due to drift; for strictly equalized 1–15 digit, $T=1024$ training comparisons (including Ruoss et al. randomized positions), see Table 8B.
+Standard 1D-Char and 50k-BPE models (18.91M) and Dual-Loop HRM-RoPE (1.56M) were trained on **1–12 digits** with a 512-token context window; our **CBT-18.95M** pre-SFT base was trained on **1–15 digits**, and the champion additionally on **1–25-digit** arithmetic replay, all with a 1024-token context window. Part II (16–20 digits) is the clean comparison within the 512-token window: HRM-RoPE (1.56M) extrapolates to 20 digits using Decoupled 2D-RoPE without CBT's three-stage curriculum, whereas the 1D models fail. In Part III (25–50 digits), 25-digit traces ($\approx 360$ tokens) and 35-digit traces ($\approx 500$ tokens) fit within the 512-token context window of the 12d baselines, where 1D-Char fails due to positional drift; 1.56M HRM-RoPE was trained without shift masking ($k=0$) and succeeds up to 20 digits, but fails at 25 and 35 digits because $p > 20$ exceeds its unshifted coordinate horizon; only 50-digit traces ($\approx 715$ tokens) exceed 512 tokens. Extending 1D-Char's frequency table to $T=1024$ still fails due to drift; for strictly equalized 1–15 digit, $T=1024$ training comparisons (including Ruoss et al. randomized positions), see Table 8B.
 
 | Digit Length | Training Exposure Status | Representative Test Problem | Expected Output | 18.91M 1D-Char | 18.91M 50k-BPE | 1.56M HRM-RoPE | CBT-18.95M (Ours) |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -152,77 +153,55 @@ Standard 1D-Char and 50k-BPE models (18.91M) and Dual-Loop HRM-RoPE (1.56M) were
 
 ---
 
-**Table 3B: Expanded Random Multi-Carry Extrapolation Sweep from 16 to 100 Digits on CBT-18.95M (`champion_final.pt`, $n = 315$ Problems, Seed 20261022)**  
-Each length evaluates a stratified random mixture (70% uniform random digits with multi-carries, 15% dense carries with $a_i + b_i \ge 9$, and 15% random cascade blocks) under deterministic greedy decoding. Because CBT-18.95M was trained on $N_{\text{train}} \le 15$ digits with shift masking $k = 32$ (Eq. 6), the maximum macro coordinate seen during training is $p_{\max} = 15 + 32 = 47$. CBT-18.95M achieves **100.0% (180/180)** across all tested lengths within the shifted coordinate support ($16 \le d \le 40$), **93.3–96.7%** at the $p_{\max}=47$ boundary ($d=45, 50$), **90.0%** at $d=55$, and then breaks down once $p$ exceeds the shifted training support ($d \ge 60$). CPU throughput measured using batched KV-cached FP32 inference on an Intel Core Ultra 5 125H CPU.
+**Table 3B: Random Multi-Carry Extrapolation Sweep from 16 to 100 Digits on CBT-18.95M (`champion_final.pt`, $n = 315$ Problems, Seed 20261022)**  
+Each length uses the stratified random mixture (70% uniform random digits with multi-carries, 15% dense carries with $a_i + b_i \ge 9$, 15% random cascade blocks) under deterministic greedy decoding, with KV-cached batched inference (`benchmarks/evaluate_random_16_to_100d.py`). champion was trained with shift masking $k=45$ on 1–25-digit operands, so the maximum macro coordinate seen in training is $p_{\max} = 25 + 45 = 70$. champion is exact on all **240/240** problems from 16 to 50 digits and on 20/20 at 55 digits, then degrades: 14/20 at 60 digits, 6/15 at 70 digits, and 0/10 at 80 and 100 digits. The 60-digit failures occur before $p$ reaches $p_{\max}$, so $p_{\max}$ does not mark a sharp failure point for champion. A separate teacher-forced suite with a different generator (Table 2, Tier 5b) gives 24/30 at both 60 and 70 digits. CPU timings were measured while other evaluations ran in parallel and are therefore only indicative.
 
-| Digit Length ($d$) | Max Column ($p$) | Coordinate Regime vs. $p_{\max}=47$ | Test Cases ($n$) | `<THINK>` Scratchpad Acc | Final Answer Exact Match | 95% Wilson CI | `(` Errors / CPU Tok/s |
+| Digit Length ($d$) | Max Column ($p$) | Coordinate Regime vs. $p_{\max}=70$ | Test Cases ($n$) | `<THINK>` Scratchpad Acc | Final Answer Exact Match | 95% Wilson CI | `(` Errors / CPU Tok/s |
 | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| 16 Digits | $p \le 16$ | Within Shifted Support ($p \le 47$) | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 328.6 tok/s |
-| 20 Digits | $p \le 20$ | Within Shifted Support ($p \le 47$) | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 393.5 tok/s |
-| 25 Digits | $p \le 25$ | Within Shifted Support ($p \le 47$) | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 359.2 tok/s |
-| 30 Digits | $p \le 30$ | Within Shifted Support ($p \le 47$) | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 265.2 tok/s |
-| 35 Digits | $p \le 35$ | Within Shifted Support ($p \le 47$) | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 253.6 tok/s |
-| 40 Digits | $p \le 40$ | Within Shifted Support ($p \le 47$) | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 261.2 tok/s |
-| 45 Digits | $p \le 45$ | Near Horizon Boundary ($p \approx 47$) | 30 | **96.7% (29/30)** | **93.3% (28/30)** | [78.7, 98.2]% | 0 / 284.8 tok/s |
-| 50 Digits | $p \le 50$ | At Horizon Boundary ($p \approx 47$) | 30 | **96.7% (29/30)** | **96.7% (29/30)** | [83.3, 99.4]% | 0 / 234.7 tok/s |
-| **Pooled 16–40d** | $p \le 40$ | **Strictly Within $p_{\max}=47$** | **180** | **100.0% (180/180)** | **100.0% (180/180)** | **[97.9, 100.0]%** | **0 Errors** |
-| **Pooled 16–50d** | $p \le 50$ | **Full Target Range (16–50d)** | **240** | **99.2% (238/240)** | **98.8% (237/240)** | **[96.4, 99.6]%** | **0 Errors** |
-| 55 Digits | $p \le 55$ | Beyond Shifted Support ($+8$ over $p_{\max}$) | 20 | **95.0% (19/20)** | **90.0% (18/20)** | [69.9, 97.2]% | 0 / 184.2 tok/s |
-| 60 Digits | $p \le 60$ | Beyond Shifted Support ($+13$ over $p_{\max}$) | 20 | 45.0% (9/20) | 45.0% (9/20) | [25.8, 65.8]% | 3 / 214.4 tok/s |
-| 70 Digits | $p \le 70$ | Beyond Shifted Support ($+23$ over $p_{\max}$) | 15 | 6.7% (1/15) | 6.7% (1/15) | [1.2, 29.8]% | 0 / 202.7 tok/s |
-| 80 Digits | $p \le 80$ | Exceeds $p_{\max}$ & $T=1024$ ($T \approx 1149$) | 10 | 0.0% (0/10) | 0.0% (0/10) | [0.0, 27.8]% | 4 / 159.5 tok/s |
-| 100 Digits | $p \le 100$ | Exceeds $p_{\max}$ & $T=1024$ ($T \approx 1429$) | 10 | 0.0% (0/10) | 0.0% (0/10) | [0.0, 27.8]% | 1 / 141.3 tok/s |
+| 16 Digits | $p \le 16$ | Seen in replay (1–25d) | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 245.6 tok/s |
+| 20 Digits | $p \le 20$ | Seen in replay (1–25d) | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 215.6 tok/s |
+| 25 Digits | $p \le 25$ | Seen in replay (1–25d) | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 187.4 tok/s |
+| 30 Digits | $p \le 30$ | Unseen, within $p_{\max}=70$ | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 154.7 tok/s |
+| 35 Digits | $p \le 35$ | Unseen, within $p_{\max}=70$ | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 148.3 tok/s |
+| 40 Digits | $p \le 40$ | Unseen, within $p_{\max}=70$ | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 103.6 tok/s |
+| 45 Digits | $p \le 45$ | Unseen, within $p_{\max}=70$ | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 99.0 tok/s |
+| 50 Digits | $p \le 50$ | Unseen, within $p_{\max}=70$ | 30 | **100.0% (30/30)** | **100.0% (30/30)** | [88.6, 100.0]% | 0 / 120.7 tok/s |
+| 55 Digits | $p \le 55$ | Unseen, within $p_{\max}=70$ | 20 | **100.0% (20/20)** | **100.0% (20/20)** | [83.9, 100.0]% | 0 / 108.8 tok/s |
+| 60 Digits | $p \le 60$ | Unseen, within $p_{\max}=70$ | 20 | **70.0% (14/20)** | **70.0% (14/20)** | [48.1, 85.5]% | 1 / 106.4 tok/s |
+| 70 Digits | $p \le 70$ | Unseen, at $p_{\max}=70$ | 15 | **40.0% (6/15)** | **40.0% (6/15)** | [19.8, 64.3]% | 0 / 85.9 tok/s |
+| 80 Digits | $p \le 80$ | Exceeds $p_{\max}=70$ | 10 | **0.0% (0/10)** | **0.0% (0/10)** | [0.0, 27.8]% | 5 / 74.5 tok/s |
+| 100 Digits | $p \le 100$ | Exceeds $p_{\max}=70$ | 10 | **0.0% (0/10)** | **0.0% (0/10)** | [0.0, 27.8]% | 0 / 71.3 tok/s |
+| **Pooled 16–40d** | $p \le 40$ | **Within Seen/Unseen Range ($p \le 40$)** | **180** | **100.0% (180/180)** | **100.0% (180/180)** | **[97.9, 100.0]%** | **0 Errors** |
+| **Pooled 16–50d** | $p \le 50$ | **Full Target Range (16–50d)** | **240** | **100.0% (240/240)** | **100.0% (240/240)** | **[98.4, 100.0]%** | **0 Errors** |
 
 ---
 
-**Table 4: Stage 3 All-Tools 1-Hop Induction SFT Alignment (`champion_final.pt`) vs. Stage 2 Search-Only SFT (`step_7000`)**  
-Extending the entity-agnostic `<THINK>` + 1-hop `<CALL>` pointer copy architecture across all 9 tool schemas achieves **100.0% (26/26) tool routing** and **96.2% (25/26) exact argument extraction**, resolving preposition and phrasing sensitivities on templates shared with Stage 3 training.
+**Table 4: Multi-Tool Phrasing & Edge-Case Suite on CBT-18.95M (`champion_final.pt`, 26 Audited Cases, 9 Schemas)**  
+Routing (correct tool) is **21/26 (80.8%, CI [62.1, 91.5]%)**; exact argument extraction is **13/26 (50.0%, CI [32.1, 67.9]%)**. All 26 prompts and entities were audited against the champion training corpus. The earlier Stage 2 vs. Stage 3 comparison (100% routing, 96.2% exact) is withdrawn: its prompts overlapped the champion training data, so it does not measure generalization.
 
-| Tool Category | User Prompt (`<USER>...`) | Stage 2 Search-Only SFT (`step_7000`) | Stage 3 All-Tools 1-Hop SFT (`champion_final.pt`) | Status |
-| :--- | :--- | :--- | :--- | :---: |
-| Weather (`on`) | `What is the weather on Rome` | `search(query="Roe Weather")` | `<CALL>get_weather(city="Rome")</CALL>` | `[PASS]` |
-| Weather (`in`) | `What is the weather in Rome?` | `search(query="the weather")` | `<CALL>get_weather(city="Rome")</CALL>` | `[PASS]` |
-| Weather (short) | `Weather in Tokyo` | `search(query="Tokyo")` | `<CALL>get_weather(city="Tokyo")</CALL>` | `[PASS]` |
-| Weather (`How is`) | `How is the weather in Paris` | `search(query="Ineazhather in Paris")` | `<CALL>get_weather(city="Paris")</CALL>` | `[PASS]` |
-| Weather (`Check`) | `Check the weather for London` | `search(query="Looath goston")` | `<CALL>get_weather(city="London")</CALL>` | `[PASS]` |
-| **Weather (Unseen Nonce)** | `What is the weather in Bloumplik?` | `search(...)` | `<CALL>get_weather(city="Bloumplik")</CALL>` | `[PASS]` |
-| Time (`in EST`) | `What is the time in EST` | `search(query="the time")` | `<CALL>get_time(timezone="EST")</CALL>` | `[PASS]` |
-| Time (`What time`) | `What time is it in JST` | `search(query="iis STST")` | `<CALL>get_time(timezone="JST")</CALL>` | `[PASS]` |
-| Unit (`Convert`) | `Convert 10 km to miles` | `unit_convert(value=10, ...)` | `<CALL>unit_convert(value=10, from_unit="km", to_unit="miles")</CALL>` | `[PASS]` |
-| Unit (`How many`) | `How many miles is 25 km` | `calculator(expr="24"1+...")` | `<CALL>unit_convert(value=25, from_unit="km", to_unit="miles")</CALL>` | `[PASS]` |
-| Search (Real Entity 1) | `What are tomatoes` | `search(query="tomatoes")` | `<CALL>search(query="tomatoes")</CALL>` | `[PASS]` |
-| Search (Real Entity 2) | `Who is Alexander Graham Bell?` | `search(query="Alexander Graham Bell")` | `<CALL>search(query="Alexander Graham Bell")</CALL>` | `[PASS]` |
-| **Search (Unseen Nonce 1)** | `What is a bloumplik` | `search(query="bloumplik")` | `<CALL>search(query="bloumplik")</CALL>` | `[PASS]` |
-| **Search (Unseen Nonce 2)** | `Define zaimgromp` | `search(query="zaimgromp")` | `<CALL>search(query="zaimgromp")</CALL>` | `[PASS]` |
-| Nested JSON (Database) | `Query top 5 active records in engineering.` | `database_query(...)` | `<CALL>database_query(filter={"department": "engineering", ...})</CALL>` | `[PASS]` |
-| Nested JSON (API) | `Fetch latency metrics for EU from /v2/metrics.` | `fetch_api(...)` | `<CALL>fetch_api(endpoint="/v2/metrics/latency", params={...})</CALL>` | `[PASS]` |
-| Direct Conversational | `Thank you!` | `<ANSWER>Hello! How can I...</ANSWER>` | `<ANSWER>You are very welcome! Let me know if you need anything else.</ANSWER>` | `[PASS]` |
+| Tool Category | Cases | Correct Routing | Exact Arguments | Observed Failures |
+| :--- | :---: | :---: | :---: | :--- |
+| Weather (`get_weather`) | 7 | 7 | 4 | City drift: `Lagnes` (Lagos), `Auccra` (Accra), `Rerevan` (Yerevan) |
+| Time (`get_time`) | 3 | 3 | 0 | Zone-code drift: `HST` (NZST), `AuctT` (SAST), `AtT` (WAT) |
+| Unit (`unit_convert`) | 2 | 2 | 2 | None |
+| Search (`search`) | 5 | 5 | 4 | `Joannes Kepler` |
+| Calculator (`calculator`) | 3 | 3 | 2 | `37 * 13` for `37 * 113` (dropped digit) |
+| Nested DB query (`database_query`) | 1 | 0 | 0 | Emitted prose and no `<CALL>` |
+| Fetch API (`fetch_api`) | 1 | 0 | 0 | Misrouted to `search` |
+| Create event (`create_event`) | 1 | 0 | 0 | Misrouted to `search` |
+| File manager (`file_manager`) | 1 | 0 | 0 | Misrouted to `search` |
+| Direct chat (no tool) | 2 | 1 | 1 | `Hello, how are you today?` routed to `get_weather(city="Toro")` |
+| **Total** | **26** | **21 (80.8%)** | **13 (50.0%)** | |
 
 ---
 
-**Table 5: Zero-Shot Out-of-Distribution (OOD) Generalization of CBT-18.95M (`champion_final.pt`) on 18 Unseen Prompts**  
-18/18 produced well-formed tags; 16/18 (88.9%) were routed to the intended tool (two drift cases); among the 16 routed cases, **8 (50.0%) copied the argument exactly**, 3 were near-exact (11/16 = 68.8% exact or near-exact), and 5 were partial. Near-exact copies are functionally failures for tool calling: `calculator(expr="844 *19")` computes the wrong product and `search(query="zagnarok")` searches the wrong string. Many prompts reuse phrasing templates seen in training; only the entities are novel.
+**Table 5: Zero-Shot Out-of-Distribution (OOD) Generalization of CBT-18.95M (`champion_final.pt`) on 18 Fresh Prompts**  
+All 18 prompts produced well-formed tags and were routed to the intended tool (18/18, 100.0%, CI [82.4, 100.0]%). Exact argument copies: **10/18 (55.6%, CI [33.7, 75.4]%)**. The eight drifted copies are listed below. Near-exact copies are tool-call failures (e.g., `search(query="zggdrasil")` searches the wrong string).
 
-| Unseen OOD Domain | Unseen User Prompt (`<USER>...`) | Generated Output (`<CALL>...</CALL>`) | Tool Routing | Character Copy Fidelity |
-| :--- | :--- | :--- | :---: | :--- |
-| OOD Science | `What is quantum physics` | `<CALL>search(query="quantum physics")</CALL>` | `[PASS]` | `[EXACT]` (15/15 chars) |
-| OOD Film / Term | `What is interstellar` | `<CALL>search(query="interstellar")</CALL>` | `[PASS]` | `[EXACT]` (12/12 chars) |
-| OOD Economics | `Define hyperinflation` | `<CALL>search(query="hyperinflation")</CALL>` | `[PASS]` | `[EXACT]` (14/14 chars) |
-| OOD Cuisine | `What is tiramisu?` | `<CALL>search(query="tiramisu")</CALL>` | `[PASS]` | `[EXACT]` (8/8 chars) |
-| OOD Astronomy | `What are neutron stars` | `<CALL>search(query="neutron stars")</CALL>` | `[PASS]` | `[EXACT]` (13/13 chars) |
-| OOD Weather (City) | `How is the weather in Reykjavik` | `<CALL>get_weather(city="Reykjavik")</CALL>` | `[PASS]` | `[EXACT]` (9/9 chars) |
-| OOD Unit (Inverted) | `How many km is 42 miles` | `<CALL>unit_convert(value=42, from_unit="miles", to_unit="km")</CALL>` | `[PASS]` | `[EXACT]` (Inverted order parsed) |
-| OOD Timezone | `What time is it in GMT` | `<CALL>get_time(timezone="GMT")</CALL>` | `[PASS]` | `[EXACT]` (3/3 chars) |
-| OOD Philosophy | `What is existentialism?` | `<CALL>search(query="existentialis")</CALL>` | `[PASS]` | `[NEAR-EXACT]` (13/14 chars) |
-| OOD Mythology | `Tell me about Ragnarok` | `<CALL>search(query="zagnarok")</CALL>` | `[PASS]` | `[NEAR-EXACT]` (7/8 chars) |
-| OOD Calculator | `Compute 84 * 19` | `<CALL>calculator(expr="844 *19")</CALL>` | `[PASS]` | `[NEAR-EXACT]` (6/7 chars) |
-| OOD Deep Learning | `What are transformers in deep learning` | `<CALL>search(query="transwormers of deep")</CALL>` | `[PASS]` | `[PARTIAL]` (4-word phrase) |
-| OOD Music / Instrument | `What is a theremin` | `<CALL>search(query="ther")</CALL>` | `[PASS]` | `[PARTIAL]` (prefix copied) |
-| OOD History (2-Word) | `Who was Marcus Aurelius?` | `<CALL>search(query="Arcusnaus")</CALL>` | `[PASS]` | `[PARTIAL]` (2-word blend) |
-| OOD Weather (2-Word) | `What is the weather in Buenos Aires?` | `<CALL>get_weather(city="Buris")</CALL>` | `[PASS]` | `[PARTIAL]` (2-word blend) |
-| OOD Weather (2-Word) | `Weather on Kuala Lumpur` | `<CALL>get_weather(city="Vuala")</CALL>` | `[PASS]` | `[PARTIAL]` (first word copied) |
-| OOD Bio (With Digit) | `Explain crispr cas9` | `<CALL>unit_convert(vanaver="9, ance")</CALL>` | `[DRIFT]` | Digit `9` triggered `unit_convert` |
-| OOD Architecture | `Search for brutalist architecture` | `<CALL>get_weather(city="Oncordar")</CALL>` | `[DRIFT]` | Preposition `for` triggered `get_weather` |
+| Result | Prompts (Entity or Argument) | Count |
+| :--- | :--- | :---: |
+| `[EXACT]` | bioluminescence, aerogel, stagflation, ceviche, quasars, km-to-miles inversion, calculator `61 * 27`, convolutional networks, harpsichord, art nouveau | 10 |
+| `[DRIFT]` | Tbilisi $\to$ `Thilisisi`; WAT $\to$ `ATC`; nihilism $\to$ `niiilism`; Yggdrasil $\to$ `zggdrasil`; Hatshepsut $\to$ `watshepsut`; Santo Domingo $\to$ `Santo`; Ho Chi Minh City $\to$ `Cith Cith`; `crispr cas12` $\to$ `crispr cos1212` | 8 |
 
 ---
 
@@ -230,14 +209,14 @@ Extending the entity-agnostic `<THINK>` + 1-hop `<CALL>` pointer copy architectu
 
 Tables 2, 3, 3B, 4, and 5 present the evaluation of our final **CBT-18.95M** model (`champion_final.pt`):
 
-1. **Zero-Shot Extrapolation from 15 Seen Digits Across 16–100 Unseen Digits (Tables 3 and 3B)**: Trained strictly on numbers of $1 \le N \le 15$ digits with shift masking $k=32$ (exposing macro column coordinates up to $p_{\max} = 15 + 32 = 47$), CBT-18.95M solves **20/20 (100.0%; CI $[83.9, 100.0]\%$)** structured 16–50 digit sums (including $\underbrace{99\dots99}_{50} + 1 = 10^{50}$). To test beyond structured patterns and map the exact breakdown horizon, we evaluated 315 stratified random multi-carry problems across 13 lengths from 16 to 100 digits (Table 3B; 70% uniform random digits, 15% dense carries with $a_i + b_i \ge 9$, 15% cascade chains). Across all 6 tested lengths within the shift-masked coordinate support ($d \in \{16, 20, 25, 30, 35, 40\}$, $p \le 40 \le p_{\max}$), CBT-18.95M achieves **180/180 (100.0%; 95% Wilson CI $[97.9, 100.0]\%$)** exact match. Across the full 16–50 digit random suite ($n = 240$), it achieves **237/240 (98.8%; CI $[96.4, 99.6]\%$)** final answer exact match and **238/240 (99.2%; CI $[97.0, 99.8]\%$)** `<THINK>` scratchpad exact match, with **zero `(` delimiter errors** and zero off-by-one readout errors (the only 3 errors at $d=45, 50$ were single-digit substitutions at the $p \approx 47$ boundary). Beyond $p_{\max} = 47$, accuracy remains **90.0% (18/20)** at 55 digits ($p \le 55$, $+8$ columns beyond shifted training support), then drops to **45.0% (9/20)** at 60 digits, **6.7% (1/15)** at 70 digits, and **0.0%** at 80–100 digits. This empirically demonstrates that Decoupled 2D-RoPE generalizes reliably across unseen sequence lengths $N > N_{\text{train}}$ *up to the maximum coordinate index $p_{\max} = N_{\text{train}} + k$ covered by shift masking during training*, and degrades once $p$ enters rotary angles never observed during training.
-2. **Stage 3 All-Tools 1-Hop Alignment (Table 4, 100.0% Routing, 96.2% Exact Args)**: In Stage 2 (`step_7000`), applying 1-hop copy induction only to `search` caused prompts with varied prepositions (like `"What is the weather on Rome"` or `"How many miles is 25 km"`) to over-route to `search`. In Stage 3 (`champion_final.pt`), transitioning *all nine tool schemas* (`get_weather`, `get_time`, `calculator`, `unit_convert`, `database_query`, `fetch_api`, `create_event`, `file_manager`, and `search`) to the entity-agnostic `<THINK>` + 1-hop `<CALL>` pointer architecture achieved **100.0% (26/26) tool routing** and **96.2% (25/26) exact argument extraction**, even routing unseen nonce cities (`"What is the weather in Bloumplik?"` $\to$ `get_weather(city="Bloumplik")`). Caveat: Stage 3 was trained on the prepositions and templates used in this 26-case suite, whereas Stage 2 never saw them, so the Stage 2 versus Stage 3 comparison is not informative about generalization to new syntax. We did not measure template overlap between the 26 cases and the training generator, and we have no held-out paraphrase set.
-3. **Zero-Shot Out-of-Distribution (OOD) Generalization (Table 5)**: On 18 unseen prompts, CBT-18.95M produced well-formed tags for all 18 (18/18) and routed 16/18 (88.9%) to the intended tool. Among the 16 routed cases, **8 (50.0%) copied the argument exactly**; 3 more were near-exact (`"existentialis"`, `"zagnarok"`, `"844 *19"`), giving 11/16 (68.8%) as a secondary, more lenient figure. Because a near-exact string is an incorrect tool argument, exact match is the relevant metric. Exact copies include single words and short lowercase phrases (`"quantum physics"`, `"interstellar"`, `"hyperinflation"`, `"tiramisu"`, `"neutron stars"`, `"Reykjavik"`), but single-word copying is *not* perfect (`"existentialism"`, `"Ragnarok"`, `"theremin"` fail). Multi-word capitalized proper nouns (`"Buenos Aires"` $\to$ `"Buris"`, `"Marcus Aurelius"` $\to$ `"Arcusnaus"`, `"Kuala Lumpur"` $\to$ `"Vuala"`) blend or truncate, plausibly because the synthetic nonce generator trains on single-word pseudowords (a hypothesis we did not test). An embedded digit (`"crispr cas9"`) and a preposition (`"Search for ..."`) each caused a mis-route.
+1. **Extrapolation Across 16–100 Digits (Tables 2, 3, and 3B)**: The champion was trained with 1–25-digit arithmetic replay and shift masking $k=45$. On random multi-carry sums it achieves **240/240 (100.0%; CI $[98.4, 100.0]\%$)** from 16 to 50 digits, including 18/18 structured 16–50 digit cascades (e.g., $\underbrace{99\dots99}_{50} + 1 = 10^{50}$). Only 16–25 digits are seen in training; 30–50 digits are unseen but still exact on every problem. At 55 digits it is 20/20, then accuracy falls to **70.0% (14/20)** at 60 digits, **40.0% (6/15)** at 70 digits, and **0.0%** at 80 and 100 digits. In-distribution sums at 8, 12, and 15 digits score **89/90 (98.9%)**, with the single miss at 15 digits. A separate teacher-forced mixed-length suite (30 per length) gives 24/30 at both 60 and 70 digits, so the 60–70 digit breakdown varies between suites and should be read as an approximate region. The earlier 1–15 digit extrapolation claims were made for the baseline, not champion.
+2. **Multi-Tool Phrasing (Table 4, 80.8% Routing, 50.0% Exact Args)**: On the 26-case, 9-schema suite with audited fresh entities, champion routes **21/26 (80.8%)** and copies arguments exactly in **13/26 (50.0%)**. Weather and time-zone entities drift (`Lagnes`, `Auccra`, `HST`/`AuctT`/`AtT`), a nested database query emits prose, and the fetch, event, and file tools are routed to `search`. The 90-dialogue tool benchmark passes 90/90, but its check only looks for tags and does not test argument correctness. The earlier 100% routing and 96.2% exact result is withdrawn because its prompts overlapped the champion training data.
+3. **Zero-Shot OOD Copying (Table 5)**: On 18 fresh prompts, champion produced well-formed tags and routed all 18 to the intended tool. Exact copies were **10/18 (55.6%)**; eight drifted, mostly on multi-word proper nouns and rare words (`Tbilisi` to `Thilisisi`, `Yggdrasil` to `zggdrasil`). Exact copies include single words and short phrases, and a km-inversion and calculator expression. On an independent 30-case unseen benchmark (Section 4 of the clean report), champion reaches **17/30 exact (56.7%)** versus **4/30 (13.3%)** for the baseline (two-sided Fisher exact $p = 0.0009$). The copy fidelity is therefore far below the arithmetic result.
 
 ---
 
 **Table 6: The Tokenization and Positional Geometry Matrix**  
-Comparing our 2D Matrix Character + Control-Token CBT formulation against 1D Character models, Subword BPE models (4k and 50k vocabularies), Digit-Split 4k BPE, and Learned 2D positional tables, explicitly contrasting **Seen Training Digits** vs. **Unseen Extrapolation Digits**. Vocabulary sizes differ by variant: 115 is the full CBT-18.95M tokenizer, 111 the CBT-200k and Learned-2D variants, and 27 the digit-and-symbol character models. All rows showing `/50` in the Tool Calling column were evaluated on the identical 50-dialogue structured tool suite (6 domains), whereas CBT-18.95M was evaluated on the 26-case 9-schema 1-hop suite of Table 4. Rows were trained with different digit ranges and data and are not a controlled $2\times2$ study. The unseen-sum column pools 14–20 digits, whereas Table 7 reports 14–16 digits separately (hence 2.3% here and 4.6% there for the 1D character model). The Structured Cascade column reports the hardest single-carry chain ($99\dots9+1$) at unseen 20 digits for the 12d models and 50 digits for CBT-18.95M (where CBT-18.95M scores 100.0% on the structured cascade case, contrasting with 96.7% on random 50-digit multi-carries in Table 3B).
+Comparing our 2D Matrix Character + Control-Token CBT formulation against 1D Character models, Subword BPE models (4k and 50k vocabularies), Digit-Split 4k BPE, and Learned 2D positional tables, explicitly contrasting **Seen Training Digits** vs. **Unseen Extrapolation Digits**. Vocabulary sizes differ by variant: 115 is the full CBT-18.95M tokenizer, 111 the CBT-200k and Learned-2D variants, and 27 the digit-and-symbol character models. All rows showing `/50` in the Tool Calling column were evaluated on the identical 50-dialogue structured tool suite (6 domains), whereas CBT-18.95M was evaluated on the 26-case 9-schema 1-hop suite of Table 4. Rows were trained with different digit ranges and data and are not a controlled $2\times2$ study. The unseen-sum column pools 14–20 digits, whereas Table 7 reports 14–16 digits separately (hence 2.3% here and 4.6% there for the 1D character model). The Structured Cascade column reports the hardest single-carry chain ($99\dots9+1$) at unseen 20 digits for the 12d models and 50 digits for CBT-18.95M (where CBT-18.95M scores 100.0% on the structured cascade case, contrasting with 100.0% on random 50-digit multi-carries in Table 3B).
 
 | Tokenizer Granularity | Positional Geometry | Vocab ($V$) | Trained Digits | Tool Calling | Seen Sums (In-Dist) | Unseen Sums (14–20d) | Structured Cascade |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -248,7 +227,7 @@ Comparing our 2D Matrix Character + Control-Token CBT formulation against 1D Cha
 | Atomic Character | NoPE + Abacus Place | 27 | 1–12 Digits | N/A | **0.0%** (1–12d) | **0.0%** (Unseen 14–20d) | **0.0%** (Unseen 20d) |
 | Atomic Character | Learned 2D Lookup Table | 111 | 1–12 Digits | 98.0% (49/50) | 100.0% (1–12d) | **0.0%** (Capped $p > 12$) | **0.0%** (Unseen 20d) |
 | **CBT-200k (Char + Control)** | **2D-RoPE Matrix ($R=3$)** | **111** | **1–12 Digits** | **100.0% (50/50)** | **100.0% (1–12d)** | **100.0% (Unseen 14–20d)** | **100.0% (Unseen 20d)** |
-| **CBT-18.95M (Char + Control)** | **2D-RoPE Matrix ($R=3$)** | **115** | **1–15 Digits** | **100.0% (26/26)** | **100.0% (1–15d)** | **98.8% (237/240 Rand 16–50d)** | **100.0% (50d Struct)** |
+| **CBT-18.95M (Char + Control)** | **2D-RoPE Matrix ($R=3$)** | **115** | **1–25 Digits (replay)** | **80.8% (21/26)** | **98.9% (89/90, 8–15d)** | **100.0% (240/240 Rand 16–50d)** | **100.0% (18/18 Struct)** |
 
 ---
 
@@ -269,7 +248,7 @@ Nine 1D/NoPE baselines (the default character model plus eight alternatives, tra
 | **HRM-RoPE (Dual-Loop)** | 1.56M | **Decoupled 2D-RoPE** | **1–12 Digits** | 100.0% | 66.7% (14–16d) | **100.0% (18–20d)** | **20 Digits (+8 Unseen Digits)** |
 | **CBT-100k ($L=2, R=3$)** | 98.9k | **Decoupled 2D-RoPE** | **1–12 Digits** | **100.0%** | **100.0% (14–16d)** | **100.0% (18–20d)** | **20 Digits (+8 Unseen Digits)** |
 | **CBT-200k ($L=4, R=3$)** | 197.8k | **Decoupled 2D-RoPE** | **1–12 Digits** | **100.0%** | **100.0% (14–16d)** | **100.0% (18–20d)** | **20 Digits (+8 Unseen) + Tools** |
-| **CBT-18.95M ($L=6, R=3$)** | **18.89M** | **Decoupled 2D-RoPE** | **1–15 Digits** | **100.0%** | **100.0% (16–40d Rand)** | **95.0% (45–50d); 90% (55d)** | **98.8% (16–50d) / $p_{\max}=47$ Bound** |
+| **CBT-18.95M ($L=6, R=3$)** | **18.89M** | **Decoupled 2D-RoPE** | **1–25 Digits (replay)** | **80.8%** | **100.0% (16–40d Rand)** | **100.0% (45–50d); 100.0% (55d)** | **100.0% (16–50d); 70.0% (60d), 40.0% (70d)** |
 
 ---
 
@@ -330,7 +309,7 @@ All four 100k models share the exact same character-level backbone ($L=2, d_{\te
 | Unseen 40 Digits ($n=200$ / $n=30$) | **Unseen (+25d)** | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | **51.5% (103/200)** [44.6, 58.3]% | **100.0% (30/30)** [88.6, 100]% |
 | Unseen 45 Digits ($n=200$ / $n=30$) | **Unseen (+30d)** | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | **30.0% (60/200)** [24.1, 36.7]% | **93.3% (28/30)** [78.7, 98.2]% |
 | Unseen 50 Digits ($n=200$ / $n=30$) | **Boundary ($p \approx 47$)** | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | **96.7% (29/30)** [83.3, 99.4]% |
-| Unseen 55 Digits ($n=200$ / $n=20$) | **Beyond $p_{\max}$ (+8d)** | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | **90.0% (18/20)** [69.9, 97.2]% |
+| Unseen 55 Digits ($n=200$ / $n=20$) | **Beyond $p_{\max}$ (+8d)** | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | **100.0% (20/20)** [83.9, 100.0]% |
 | Unseen 60 Digits ($n=200$ / $n=20$) | **Beyond $p_{\max}$ (+13d)** | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | 0.0% (0/200) [0.0, 1.9]% | 45.0% (9/20) [25.8, 65.8]% |
 | Unseen 70–100 Digits ($n=600$ / $n=45$) | **Beyond $p_{\max}$ & Context** | 0.0% (0/600) [0.0, 0.6]% | 0.0% (0/600) [0.0, 0.6]% | 0.0% (0/600) [0.0, 0.6]% | 0.0% (0/600) [0.0, 0.6]% | 2.2% (1/45; 6.7% 70d, 0% 80–100) |
 | **Pooled Unseen 16–40d ($n=1,200$ / $n=180$)** | **Within $p_{\max}=47$** | 0.0% (0/1200) [0.0, 0.3]% | 0.0% (0/1200) [0.0, 0.3]% | 0.0% (0/1200) [0.0, 0.3]% | **81.4% (977/1200)** [79.1, 83.5]% | **100.0% (180/180)** [97.9, 100]% |
@@ -445,7 +424,7 @@ During training, we apply **Selective Coordinate Shift Masking**:
 
 $$p_t \leftarrow p_t + \Delta \cdot \mathbb{I}(p_t > 0), \quad \Delta \sim \mathcal{U}\{0, 1, \dots, k\} \tag{6}$$
 
-with $k=32$ for CBT-18.95M and $k=16$ for the 100k ablation models of Table 8. This exposes $p > 0$ arithmetic columns to indices up to $p = 47$ during 15-digit training (with $k=32$), while keeping the `<USER>` prompt ($p=0$) anchored at the origin. It is closely related to randomized positional encodings [16].
+with $k=45$ for CBT-18.95M and $k \in \{0, 16, 32, 64\}$ for the 100k ablation models of Table 8. This exposes $p > 0$ arithmetic columns to indices up to $p = 70$ during 1–25-digit replay (with $k=45$), while keeping the `<USER>` prompt ($p=0$) anchored at the origin. It is closely related to randomized positional encodings [16].
 
 ### 3.4 Weight-Tied Recurrent Depth with $1/\sqrt{R}$ Scaling
 
@@ -457,7 +436,7 @@ The $1/\sqrt{R}$ factor is a heuristic residual damping choice. We do not derive
 
 ---
 
-**Table 10: Complete Three-Stage Training Data Composition, Digit Horizon Boundaries, and Loss Masking Specification for CBT-18.95M (`champion_final.pt`)**  
+**Table 10: Complete Three-Stage Training Data Composition, Digit Horizon Boundaries, and Loss Masking Specification for the CBT-18.95M Pre-SFT Base (`champion_base.pt`; the champion adds V4 SFT)**  
 Across all stages, arithmetic training is strictly bounded to **1–15 digits ($N \le 15$)**. All 16- to 50-digit evaluations are 100% zero-shot out-of-distribution extrapolations.
 
 | Training Stage | Dataset Component / Sub-Distribution | Pattern / Schema Specification | Trained Digit / Length Scope | Mixture Weight | Supervised Target (Masking Rule) |
@@ -476,7 +455,7 @@ Across all stages, arithmetic training is strictly bounded to **1–15 digits ($
 
 ### 3.5 Three-Stage Training Data & 1-Hop Induction Curriculum
 
-Table 10 summarizes the three-stage training protocol that produced `champion_final.pt` on dual NVIDIA T4 GPUs (FP16 AMP):
+Table 10 summarizes the three-stage protocol that produced the pre-SFT base `champion_base.pt` on dual NVIDIA T4 GPUs (FP16 AMP). The champion checkpoint (`champion_final.pt`) starts from that base and is trained further with the V4 SFT curriculum (`sft_search.py --curriculum v4`: 45% multi-tool, 35% search copy, 20% arithmetic replay with 1–25-digit operands, $k=45$; hyperparameters in the training script, not in Table 10):
 1. **Stage 1 (Joint Pretraining, 45,059 steps, 247.3M tokens, Loss `0.000094`)**: Trained on a 50%/50% mixture of 1–15 digit column addition (40% asymmetric lengths, 25% symmetric lengths, 20% cascading carries $99\dots9+b$, 15% power-of-ten zero chains) and 6-category structured tool dialogues, with $-100$ loss masking on prompts and `<RESULT>` payloads.
 2. **Stage 2 (Search Copy Induction SFT, 7,000 steps, Loss `0.004834`)**: In early SFT tests, repeating an unfamiliar entity $X$ inside `<THINK>` before calling `<CALL>` caused a *2-Hop Copy Bottleneck*, where character n-gram priors hallucinated phonotactic nonces (`"tomatoes"` $\to$ `"smoom"`, `"bloumplik"` $\to$ `"cheat"`). Decoupling `<THINK>` into an invariant intent statement and training on 65% procedurally generated phonotactic pseudowords ($L_{\text{memorize}} \to \infty$) forced a **1-hop induction pointer head** ($p=2 \to p=0$) to copy unseen strings character-by-character.
 3. **Stage 3 (All-Tools 1-Hop Annealing SFT, 4,000 steps, LR $5\times 10^{-5} \to 5\times 10^{-6}$, Loss `0.007532`)**: Extended the 1-hop pointer copy formulation across all 9 tool schemas (`get_weather`, `get_time`, `calculator`, `unit_convert`, `database_query`, `fetch_api`, `create_event`, `file_manager`, and `search`) alongside a 10% 1–15 digit math replay buffer, achieving **100.0% (26/26) tool routing**, **96.2% (25/26) exact argument extraction**, and **100.0% 1–50 digit sum extrapolation**.
@@ -503,7 +482,7 @@ However, at compact scales (**100k to 18.95M parameters**), individual forward p
 
 ### 4.3 Open Questions and Further Testing
 
-While CBT-18.95M shows that placing characters on a hand-assigned 2D coordinate grid $(p, \tau)$ yields 100.0% accuracy (180/180) on random 16–40 digit sums, 98.8% (237/240) across 16–50 digits, and 90.0% (18/20) at 55 digits before degrading beyond the $p_{\max} = N_{\text{train}} + k = 47$ shift-masking horizon (Table 3B), our OOD and ablation experiments leave several questions open:
+While CBT-18.95M shows that placing characters on a hand-assigned 2D coordinate grid $(p, \tau)$ yields 100.0% accuracy (180/180) on random 16–40 digit sums, 100.0% (240/240) across 16–50 digits, and 100.0% (20/20) at 55 digits (70.0% at 60 digits) before degrading at 60 digits, with failures already appearing before the $p_{\max} = N_{\text{train}} + k = 70$ shift-masking horizon (Table 3B), our OOD and ablation experiments leave several questions open:
 1. **Sensitivity to Epoch Reinforcement and Boundary Coordinates**: As shown in our 100k component ablations (Table 8), while several combinations of 2D-RoPE and recurrence achieved identical 78.6% strict match at 12.8 epochs, the off-by-one trailing zero readout error at the $p=1 \to p=0$ boundary disappeared in our runs with higher epoch density (64 epochs on a 1,000-sample pool) or larger capacity (18.95M); however, these single-run comparisons do not isolate whether the fix came from boundary exposure, memorization of the small pool, or model scale.
 2. **Multi-Word OOD Pointer Spans and General Algorithms**: In zero-shot OOD testing (Table 5), two-word capitalized proper nouns (`"Buenos Aires"` $\to$ `"Buris"`) still experience partial compression, and our algorithmic generalization scope here focused on $\mathcal{O}(N)$ column sums rather than $\mathcal{O}(N^2)$ multiplication or arbitrary graph algorithms.
 3. **Learned Coordinates and Other Tasks**: Emitting hundreds of scratchpad characters is an inefficient simulation of an ALU, the coordinates are hand-assigned, and extrapolation is bounded by the shift-masked coordinate support $p_{\max} = N_{\text{train}} + k$ (Table 3B). Important next steps are learning or inferring $(p, \tau)$, testing on a second task whose coordinates are not trivial (multiplication, sorting, string reversal), running multi-seed training, and comparing against equalized 1D baselines with randomized positions, index hints, and tuned Abacus embeddings [16, 17, 18, 19].
@@ -544,3 +523,7 @@ Starting from the failure of a standard 18.91M-parameter Transformer and eight a
 17. Y. Zhou, U. Alon, X. Chen, X. Wang, R. Agarwal, and D. Zhou. *Transformers can achieve length generalization but not robustly*. arXiv preprint arXiv:2402.09371, 2024.
 18. S. Duan and Y. Shi. *From interpolation to extrapolation: Complete length generalization for arithmetic transformers*. arXiv preprint arXiv:2310.11984, 2023.
 19. Y. Fan, Y. Du, K. Ramchandran, and K. Lee. *Looped transformers for length generalization*. arXiv preprint arXiv:2409.15647, 2024.
+20. Y. Shaham and O. Levy. *Neural machine translation without embeddings*. In Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics (NAACL), 2021.
+21. R. Al-Rfou, D. Choe, N. Constant, M. Guo, and L. Jones. *Character-level language modeling with deeper self-attention*. In Proceedings of the AAAI Conference on Artificial Intelligence, 2019.
+22. L. Xue, A. Barua, N. Constant, R. Al-Rfou, S. Narang, M. Kale, A. Roberts, and C. Raffel. *ByT5: Towards a token-free future with pre-trained byte-to-byte models*. Transactions of the Association for Computational Linguistics, 10:291–306, 2022. arXiv:2105.13626.
+23. A. Pagnoni, R. Pasunuru, P. Rodriguez, J. Nguyen, B. Muller, M. Li, C. Zhou, L. Yu, J. Weston, L. Zettlemoyer, G. Ghosh, M. Lewis, A. Holtzman, and S. Iyer. *Byte latent transformer: Patches scale better than tokens*. arXiv preprint arXiv:2412.09871, 2024.

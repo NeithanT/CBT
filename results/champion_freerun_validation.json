@@ -1,0 +1,62 @@
+{
+  "checkpoint": "champion_model/scaled_t4/checkpoints/champion_final.pt",
+  "max_train_operand_digits": 25,
+  "arithmetic": {
+    "per_length": {
+      "20": {
+        "digits": 20,
+        "mode": "free_run",
+        "seen_in_training": true,
+        "n": 2,
+        "exact": 2,
+        "exact_ci": [
+          34.2,
+          100.0
+        ],
+        "think_exact": 0,
+        "think_ci": [
+          0.0,
+          65.8
+        ],
+        "gen_tokens": 457,
+        "elapsed_sec": 395.72
+      },
+      "26": {
+        "digits": 26,
+        "mode": "free_run",
+        "seen_in_training": false,
+        "n": 2,
+        "exact": 2,
+        "exact_ci": [
+          34.2,
+          100.0
+        ],
+        "think_exact": 0,
+        "think_ci": [
+          0.0,
+          65.8
+        ],
+        "gen_tokens": 600,
+        "elapsed_sec": 493.8
+      }
+    },
+    "summary": {
+      "unseen": {
+        "n": 2,
+        "exact": 2,
+        "exact_ci": [
+          34.2,
+          100.0
+        ]
+      },
+      "seen": {
+        "n": 2,
+        "exact": 2,
+        "exact_ci": [
+          34.2,
+          100.0
+        ]
+      }
+    }
+  }
+}

@@ -447,7 +447,7 @@ def generate_arithmetic_equations(
 # 2. Expanded Tool Repertoire Generator
 # -----------------------------------------------------------------------------
 
-def generate_tool_example(rng: random.Random) -> Dict[str, str]:
+def generate_tool_example(rng: random.Random, category: Optional[str] = None) -> Dict[str, str]:
     """
     Generates a structured synthetic tool interaction from 6 expanded categories:
     1. Single-tool calling (calculator, weather, search, time, unit_convert)
@@ -461,8 +461,9 @@ def generate_tool_example(rng: random.Random) -> Dict[str, str]:
     - <THINK> emits a clean, entity-agnostic routing intent (no variable copying in <THINK>).
     - <CALL> copies arguments directly from <USER> via 1-hop attention pointers.
     - Symmetric punctuation curriculum (50% with '?'/'.', 50% raw conversational text).
+    `category` forces a specific category instead of sampling one.
     """
-    category = rng.choices(
+    category = category or rng.choices(
         [
             "single_tool",
             "multi_tool_chain",
@@ -933,6 +934,433 @@ def generate_tool_dataset(n_samples: int = 4000, seed: int = 1337) -> List[Dict[
             "category": ex["category"],
         })
     return dataset
+
+
+# -----------------------------------------------------------------------------
+# 2b. Curriculum V5: Broad-Distribution Copy Spans & Parameterized Schemas
+# -----------------------------------------------------------------------------
+# V4 copy spans came from one narrow phonotactic inventory, so real-world
+# spellings outside it (doubled vowels, lowercase connectors, leading articles)
+# drifted at copy time. V5 widens the span distribution, strips articles from
+# arguments, parameterizes every nested schema, and keeps <THINK> short so
+# nested calls close within a 140-token decode budget.
+
+SPAN_ONSETS_EXT = NONCE_ONSETS + [
+    "", "", "b", "c", "d", "f", "g", "h", "l", "m", "n", "p", "r", "s", "t", "w", "y",
+    "ph", "sh", "kh", "zh", "ts", "ng", "nj", "sr", "vr", "hy", "mb", "nd", "rh", "x",
+]
+SPAN_NUCLEI_EXT = NONCE_NUCLEI + ["aa", "ii", "uu", "ae", "ia", "io", "ua", "ei", "au", "eo", "ie", "ya"]
+SPAN_CODAS_EXT = NONCE_CODAS + ["", "", "", "n", "r", "s", "l", "ng", "rm", "nd", "st", "x", "ch", "lt", "ss"]
+SPAN_CONNECTORS = ["of", "van", "de", "da", "del", "es", "la", "al", "bin", "von", "le", "and", "y", "el"]
+LETTERS = "abcdefghijklmnopqrstuvwxyz"
+
+V5_TIMEZONES = TIMEZONES + ["MST", "EET", "BST", "SGT", "NZST", "PDT", "EDT", "WET", "KST", "MSK"]
+V5_REGIONS = ["EU", "US", "APAC", "LATAM", "MEA", "UK", "JP", "IN", "BR", "CA"]
+V5_METRICS = ["latency", "errors", "uptime", "cpu", "memory", "requests", "traffic", "bandwidth"]
+V5_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "tomorrow", "next week"]
+V5_FILE_EXTS = ["txt", "json", "csv", "md", "log", "py", "yaml", "cfg"]
+V5_RECORD_STATUSES = ["active", "inactive", "pending", "archived"]
+
+NO_TOOL_OPENERS = [
+    "Hello", "Hi", "Hey", "Good morning", "Good afternoon", "Good evening",
+    "Greetings", "Hi there", "Hello there", "Hey there", "Howdy",
+]
+NO_TOOL_BODIES = [
+    "how are you", "how are you today", "how are you doing", "how is it going",
+    "how have you been", "what's up", "nice to meet you", "how is your day",
+    "how is your day going", "how are things", "are you there", "how are you doing today",
+]
+NO_TOOL_STANDALONE = [
+    ("thanks", "Thank you"), ("thanks", "Thanks a lot"), ("thanks", "Thanks for the help"),
+    ("thanks", "Thank you so much"), ("thanks", "Much appreciated"), ("thanks", "Great, thanks"),
+    ("bye", "Goodbye"), ("bye", "See you later"), ("bye", "Good night"), ("bye", "Bye for now"),
+    ("identity", "Who are you"), ("identity", "What can you do"), ("identity", "What is your name"),
+    ("identity", "Are you a robot"), ("ack", "Okay"), ("ack", "Nice work"), ("ack", "That was helpful"),
+    ("ack", "Cool"), ("ack", "Sounds good"), ("ack", "Got it"),
+]
+NO_TOOL_REPLIES = {
+    "greeting": [
+        "Hello! I am doing well, thank you. How can I help you today?",
+        "Hi! Everything is running smoothly. What can I do for you?",
+        "Hello! How may I assist you today?",
+    ],
+    "thanks": [
+        "You are welcome! Let me know if you need anything else.",
+        "Happy to help! Feel free to ask another question.",
+    ],
+    "bye": ["Goodbye! Have a great day.", "See you soon! Take care."],
+    "identity": [
+        "I am CBT, a compact assistant that can call tools for weather, time, search, unit conversion, and arithmetic.",
+    ],
+    "ack": ["Great! Let me know if there is anything else I can do.", "Glad to hear it. What else can I help with?"],
+}
+
+
+def _span_word(rng: random.Random) -> str:
+    """Samples one lowercase word from a mixture of phonotactic, nonce, random-letter, and alphanumeric shapes."""
+    r = rng.random()
+    if r < 0.55:
+        w = ""
+        while not 2 <= len(w) <= 14:
+            n_syl = rng.choice([1, 2, 2, 2, 3, 3, 4])
+            w = "".join(
+                rng.choice(SPAN_ONSETS_EXT) + rng.choice(SPAN_NUCLEI_EXT)
+                + (rng.choice(SPAN_CODAS_EXT) if rng.random() < 0.5 else "")
+                for _ in range(n_syl)
+            )
+    elif r < 0.75:
+        w, _, _ = generate_nonce_entity(rng, allow_multi_word=False)
+        w = w.lower()
+    elif r < 0.90:
+        w = "".join(rng.choice(LETTERS) for _ in range(rng.randint(3, 12)))
+    else:
+        stem = "".join(rng.choice(LETTERS) for _ in range(rng.randint(1, 6)))
+        num = str(rng.randint(0, 999))
+        w = rng.choice([stem + num, stem + "-" + num, num + stem, stem.upper() + num])
+    return w if len(w) >= 2 else w + rng.choice(LETTERS)
+
+
+def generate_copy_span(rng: random.Random, max_words: int = 4, title_prob: float = 0.5) -> str:
+    """Samples a 1-4 word span with mixed casing and optional lowercase connectors ('X de Y' shape)."""
+    n_words = rng.choices([1, 2, 3, 4][:max_words], weights=[0.50, 0.30, 0.15, 0.05][:max_words], k=1)[0]
+    words = [_span_word(rng) for _ in range(n_words)]
+    while len(" ".join(words)) > 36:
+        words = [_span_word(rng) for _ in range(n_words)]
+    casing = rng.random()
+    if casing < title_prob:
+        words = [w[0].upper() + w[1:] for w in words]
+    elif casing < title_prob + 0.05:
+        words = [w.upper() for w in words]
+    elif casing < title_prob + 0.10:
+        words[0] = words[0][0].upper() + words[0][1:]
+    if n_words >= 2 and rng.random() < 0.25:
+        words.insert(rng.randint(1, n_words - 1), rng.choice(SPAN_CONNECTORS))
+    return " ".join(words)
+
+
+def _v5_entity(rng: random.Random) -> Tuple[str, str]:
+    """Returns (entity, snippet), mixing broad copy spans with case-perturbed known entities."""
+    if rng.random() < 0.70:
+        ent = generate_copy_span(rng)
+        return ent, "a topic described in verified reference sources."
+    item = rng.choice(SEARCH_ENTITIES)
+    ent = item["entity"]
+    r = rng.random()
+    if r < 0.25:
+        ent = ent.lower()
+    elif r < 0.35:
+        ent = ent.title()
+    return ent, item["snippet"]
+
+
+def _wrap(user_prompt: str, thought: str, call: str, result: str, answer: str) -> str:
+    return (
+        f"<USER>{user_prompt}</USER><THINK>{thought}</THINK><CALL>{call}</CALL>"
+        f"<RESULT>{result}</RESULT><ANSWER>{answer}</ANSWER>"
+    )
+
+
+def generate_search_v5_example(rng: random.Random) -> Dict[str, str]:
+    """Search delegation with article-stripped arguments ('Tell me about the X' -> query='X')."""
+    ent, snippet = _v5_entity(rng)
+    q = "?" if rng.random() < 0.5 else ""
+    p = "." if rng.random() < 0.5 else ""
+    article = "an" if ent[0].lower() in "aeiou" else "a"
+    user_prompt = rng.choice([
+        f"What is {ent}{q}", f"What is the {ent}{q}", f"What is {article} {ent}{q}", f"What are {ent}{q}",
+        f"What are the {ent}{q}", f"Tell me about {ent}{p}", f"Tell me about the {ent}{p}",
+        f"Tell me about {article} {ent}{p}", f"Define {ent}{p}", f"Define the term {ent}{p}",
+        f"Explain {ent}{p}", f"Explain the {ent}{p}", f"Search for {ent}{p}", f"Look up {ent}{p}",
+        f"Who is {ent}{q}", f"Who was {ent}{q}", f"Find information about {ent}{p}",
+        f"Give me information on {ent}{p}", f"I want to learn about {ent}{p}",
+    ])
+    thought = rng.choice([
+        "The user is asking a factual question. I will query the search tool.",
+        "The user requests factual information. Querying search.",
+        "The user is seeking knowledge on this topic. I will search the web.",
+    ])
+    full_text = _wrap(
+        user_prompt, thought, f"search(query=\"{ent}\")",
+        json.dumps({"snippet": snippet}), f"According to search results, {ent} is {snippet}",
+    )
+    return {"category": "search_v5", "full_text": full_text}
+
+
+def generate_single_tool_v5_example(rng: random.Random) -> Dict[str, str]:
+    """Weather / calculator / time / unit_convert with broad spans and verbatim calculator expressions."""
+    q = "?" if rng.random() < 0.5 else ""
+    p = "." if rng.random() < 0.5 else ""
+    sub = rng.choices(["weather", "calculator", "time", "unit_convert"], weights=[0.35, 0.35, 0.15, 0.15], k=1)[0]
+
+    if sub == "weather":
+        city = generate_copy_span(rng, max_words=3, title_prob=0.85) if rng.random() < 0.55 else rng.choice(CITIES)
+        temp, cond = rng.randint(-10, 40), rng.choice(CONDITIONS)
+        user_prompt = rng.choice([
+            f"What is the weather in {city}{q}", f"What is the weather on {city}{q}",
+            f"What is the weather for {city}{q}", f"What's the weather in {city}{q}",
+            f"What is the weather like in {city}{q}", f"How is the weather in {city}{q}",
+            f"How is the weather on {city}{q}", f"Weather in {city}{p}", f"Weather on {city}{p}",
+            f"Weather for {city}{p}", f"Check the weather in {city}{p}", f"Check the weather for {city}{p}",
+            f"Tell me the weather in {city}{p}", f"Forecast for {city}{p}", f"{city} weather{p}",
+            f"Is it raining in {city}{q}", f"Temperature in {city}{p}",
+        ])
+        thought = rng.choice([
+            "The user requests current weather information. I will query the get_weather tool.",
+            "The user is asking for weather conditions. Querying get_weather.",
+        ])
+        call = f"get_weather(city=\"{city}\")"
+        result = json.dumps({"temp": temp, "condition": cond, "units": "celsius"})
+        answer = f"The weather in {city} is currently {cond} with a temperature of {temp} degrees Celsius."
+
+    elif sub == "calculator":
+        op = rng.choice(["+", "-", "*", "/"])
+        if op == "/":
+            b = rng.randint(2, 99)
+            res = rng.randint(2, 999)
+            a = res * b
+        else:
+            a = rng.randint(1, 10 ** rng.randint(1, 5) - 1)
+            b = rng.randint(1, 10 ** rng.randint(1, 4) - 1)
+            res = a + b if op == "+" else (a - b if op == "-" else a * b)
+        expr = rng.choice([f"{a} {op} {b}", f"{a}{op}{b}"])
+        user_prompt = rng.choice([
+            f"Calculate {expr}{p}", f"What is {expr}{q}", f"Compute {expr}{p}", f"Evaluate {expr}{p}",
+            f"Solve {expr}{p}", f"What's {expr}{q}", f"How much is {expr}{q}",
+        ])
+        thought = rng.choice([
+            "The user requests an arithmetic calculation. I will invoke the calculator tool.",
+            "The user is asking to evaluate a mathematical expression. Calling calculator.",
+        ])
+        call = f"calculator(expr=\"{expr}\")"
+        result = json.dumps({"result": res})
+        answer = f"The evaluated result of {expr} is {res}."
+
+    elif sub == "time":
+        # 40% synthetic uppercase codes so timezone is copied from the prompt, not recalled from a list
+        tz = rng.choice(V5_TIMEZONES) if rng.random() < 0.6 else "".join(rng.choice(LETTERS) for _ in range(rng.randint(2, 5))).upper()
+        time_str = f"{rng.randint(0, 23):02d}:{rng.randint(0, 59):02d}"
+        user_prompt = rng.choice([
+            f"What is the current time in {tz}{q}", f"What is the time in {tz}{q}", f"What time is it in {tz}{q}",
+            f"Current time in {tz}{p}", f"Time in {tz}{p}", f"Tell me the time in {tz}{p}",
+            f"Check the time for {tz}{p}",
+        ])
+        thought = "The user is asking for the current time. Querying get_time."
+        call = f"get_time(timezone=\"{tz}\")"
+        result = json.dumps({"time": time_str, "timezone": tz})
+        answer = f"The current time in {tz} is {time_str}."
+
+    else:
+        val = rng.randint(1, 1000)
+        from_u, to_u, factor = rng.choice([
+            ("km", "miles", 0.621371), ("miles", "km", 1.60934), ("kg", "lbs", 2.20462), ("lbs", "kg", 0.453592),
+        ])
+        user_prompt = rng.choice([
+            f"Convert {val} {from_u} to {to_u}{p}", f"How many {to_u} is {val} {from_u}{q}",
+            f"How many {to_u} are in {val} {from_u}{q}", f"What is {val} {from_u} in {to_u}{q}",
+            f"Change {val} {from_u} into {to_u}{p}",
+        ])
+        thought = "The user requests a unit conversion. I will invoke the unit_convert tool."
+        call = f"unit_convert(value={val}, from_unit=\"{from_u}\", to_unit=\"{to_u}\")"
+        result = json.dumps({"value": round(val * factor, 2), "unit": to_u})
+        answer = f"{val} {from_u} is equal to {round(val * factor, 2)} {to_u}."
+
+    return {"category": f"single_{sub}", "full_text": _wrap(user_prompt, thought, call, result, answer)}
+
+
+def generate_nested_v5_example(rng: random.Random) -> Dict[str, str]:
+    """Parameterized compact nested schemas; short <THINK> keeps the full call under the decode budget."""
+    p = "." if rng.random() < 0.5 else ""
+    schema = rng.choice(["db_query", "event_create", "file_manage", "api_fetch"])
+
+    if schema == "db_query":
+        dept = rng.choice(DEPARTMENTS) if rng.random() < 0.6 else _span_word(rng).lower()[:12]
+        n = rng.randint(1, 20)
+        status = rng.choice(V5_RECORD_STATUSES)
+        user_prompt = rng.choice([
+            f"Query the top {n} {status} records in the {dept} department{p}",
+            f"Query top {n} {status} records in {dept}{p}",
+            f"Get {n} {status} records from {dept}{p}",
+            f"Show the top {n} {status} {dept} records{p}",
+            f"Fetch the top {n} {status} entries from {dept}{p}",
+            f"List {n} {status} records in the {dept} team{p}",
+        ])
+        thought = "Calling database_query."
+        call = f"database_query(filter={{\"department\": \"{dept}\", \"status\": \"{status}\"}}, options={{\"limit\": {n}}})"
+        result = json.dumps({"status": "success", "count": n})
+        answer = f"Found {n} {status} records in {dept}."
+
+    elif schema == "event_create":
+        title = generate_copy_span(rng, max_words=3, title_prob=0.9)
+        h = rng.randint(0, 22)
+        start = f"{h:02d}:{rng.choice([0, 15, 30, 45]):02d}"
+        end = f"{h + 1:02d}:{start[-2:]}"
+        mode = rng.random()
+        if mode < 0.3:
+            day = rng.choice(V5_DAYS)
+            on = "" if day in ("tomorrow", "next week") else "on "
+            user_prompt = rng.choice([
+                f"Create a calendar event for {title} {on}{day}{p}",
+                f"Schedule {title} {on}{day}{p}",
+                f"Add {title} to my calendar {on}{day}{p}",
+                f"Book {title} {on}{day}{p}",
+            ])
+            call = f"create_event(event={{\"title\": \"{title}\", \"date\": \"{day}\"}})"
+            start = day
+        elif mode < 0.55:
+            user_prompt = rng.choice([
+                f"Schedule {title} from {start} to {end}{p}",
+                f"Create a calendar event for {title} from {start} to {end}{p}",
+                f"Book {title} between {start} and {end}{p}",
+            ])
+            call = f"create_event(event={{\"title\": \"{title}\", \"start\": \"{start}\", \"end\": \"{end}\"}})"
+        else:
+            user_prompt = rng.choice([
+                f"Create a calendar event for {title} at {start}{p}",
+                f"Create an event called {title} at {start}{p}",
+                f"Schedule {title} at {start}{p}",
+                f"Add {title} to my calendar at {start}{p}",
+                f"Set up {title} at {start} tomorrow{p}",
+            ])
+            call = f"create_event(event={{\"title\": \"{title}\", \"start\": \"{start}\"}})"
+        thought = "Calling create_event."
+        result = json.dumps({"event_id": f"evt_{rng.randint(10000, 99999)}", "status": "confirmed"})
+        answer = f"Scheduled {title} for {start}."
+
+    elif schema == "file_manage":
+        fname = f"{_span_word(rng).lower()[:10]}.{rng.choice(V5_FILE_EXTS)}"
+        if rng.random() < 0.3:
+            fname = f"{rng.choice(['docs', 'data', 'logs', 'tmp', 'notes'])}/{fname}"
+        action = rng.choices(["write", "read", "delete"], weights=[0.7, 0.15, 0.15], k=1)[0]
+        if action == "write":
+            content = generate_copy_span(rng, max_words=3, title_prob=0.6)
+            user_prompt = rng.choice([
+                f"Save {fname} with content {content}{p}",
+                f"Write {content} to {fname}{p}",
+                f"Create file {fname} containing {content}{p}",
+                f"Save the text {content} in {fname}{p}",
+            ])
+            call = f"file_manager(action=\"write\", file={{\"path\": \"{fname}\"}}, content=\"{content}\")"
+        else:
+            verb = "Read" if action == "read" else "Delete"
+            user_prompt = rng.choice([f"{verb} {fname}{p}", f"{verb} the file {fname}{p}"])
+            call = f"file_manager(action=\"{action}\", file={{\"path\": \"{fname}\"}})"
+        thought = "Calling file_manager."
+        result = json.dumps({"status": "ok"})
+        answer = f"File operation {action} completed for {fname}."
+
+    else:
+        segs = [_span_word(rng).lower()[:8] for _ in range(rng.randint(1, 2))]
+        endpoint = f"/v{rng.randint(1, 3)}/" + "/".join(segs)
+        region, metric = rng.choice(V5_REGIONS), rng.choice(V5_METRICS)
+        user_prompt = rng.choice([
+            f"Fetch {metric} metrics for {region} from {endpoint}{p}",
+            f"Fetch {metric} metrics for {region} region from {endpoint}{p}",
+            f"Get {metric} data from {endpoint} for {region}{p}",
+            f"Call {endpoint} for {region} {metric}{p}",
+        ])
+        thought = "Calling fetch_api."
+        call = f"fetch_api(endpoint=\"{endpoint}\", params={{\"region\": \"{region}\", \"metric\": \"{metric}\"}})"
+        result = json.dumps({"status": 200, "data": {"value": round(rng.random() * 100, 1)}})
+        answer = f"Retrieved {metric} for {region} from {endpoint}."
+
+    return {"category": f"nested_{schema}", "full_text": _wrap(user_prompt, thought, call, result, answer)}
+
+
+def generate_error_v5_example(rng: random.Random) -> Dict[str, str]:
+    """Error recovery traces using the V5 compact schemas."""
+    err = rng.choice(["div_zero", "city_not_found", "api_503_fallback", "table_missing"])
+    if err == "div_zero":
+        num = rng.randint(1, 9999)
+        user_prompt = f"Calculate {num} / 0"
+        steps = [
+            ("The user requests an arithmetic calculation. I will invoke the calculator tool.",
+             f"calculator(expr=\"{num} / 0\")", json.dumps({"error": "ZeroDivisionError: division by zero"})),
+        ]
+        final_thought = "The calculator returned ZeroDivisionError. I will explain this clearly."
+        answer = "Division by zero is undefined. Please provide a non-zero denominator."
+    elif err == "city_not_found":
+        city = generate_copy_span(rng, max_words=2, title_prob=1.0)
+        user_prompt = f"What is the weather in {city}"
+        steps = [
+            ("The user requests current weather information. I will query the get_weather tool.",
+             f"get_weather(city=\"{city}\")", json.dumps({"status": "error", "code": 404})),
+        ]
+        final_thought = "get_weather returned 404. I must inform the user."
+        answer = f"I could not retrieve weather data for {city} because it is not recognized."
+    elif err == "api_503_fallback":
+        city = rng.choice(CITIES)
+        user_prompt = f"Check the primary API forecast for {city}"
+        steps = [
+            ("Calling fetch_api.", f"fetch_api(endpoint=\"/v1/weather\", params={{\"city\": \"{city}\"}})",
+             json.dumps({"status": 503})),
+            ("Primary API failed with 503. Falling back to get_weather.", f"get_weather(city=\"{city}\")",
+             json.dumps({"temp": 22, "condition": "Sunny"})),
+        ]
+        final_thought = ""
+        answer = f"The primary service was unavailable, but the fallback reports {city} is Sunny at 22C."
+    else:
+        table = _span_word(rng).lower()[:12]
+        user_prompt = f"Query records from table {table}"
+        steps = [
+            ("Calling database_query.", f"database_query(filter={{\"table\": \"{table}\"}}, options={{\"limit\": 5}})",
+             json.dumps({"status": "error", "code": "TABLE_NOT_FOUND"})),
+        ]
+        final_thought = "TABLE_NOT_FOUND. Informing the user."
+        answer = f"The table {table} was not found. Please verify the table name."
+
+    text = f"<USER>{user_prompt}</USER>"
+    for thought, call, result in steps:
+        text += f"<THINK>{thought}</THINK><CALL>{call}</CALL><RESULT>{result}</RESULT>"
+    if final_thought:
+        text += f"<THINK>{final_thought}</THINK>"
+    text += f"<ANSWER>{answer}</ANSWER>"
+    return {"category": "error_v5", "full_text": text}
+
+
+def generate_no_tool_v5_example(rng: random.Random) -> Dict[str, str]:
+    """Compositional chit-chat (greetings with 'today'/'doing' etc.) routed directly to <ANSWER>."""
+    if rng.random() < 0.6:
+        opener, body = rng.choice(NO_TOOL_OPENERS), rng.choice(NO_TOOL_BODIES)
+        sep = rng.choice([", ", "! ", " ", ". "])
+        user_prompt = f"{opener}{sep}{body}{rng.choice(['?', '', '!'])}"
+        if rng.random() < 0.15:
+            user_prompt = user_prompt.lower()
+        kind = "greeting"
+    else:
+        kind, user_prompt = rng.choice(NO_TOOL_STANDALONE)
+        user_prompt += rng.choice(["", ".", "!", "?"] if kind == "identity" else ["", ".", "!"])
+    thought = "Conversational request that does not require any tool. I will answer directly."
+    full_text = f"<USER>{user_prompt}</USER><THINK>{thought}</THINK><ANSWER>{rng.choice(NO_TOOL_REPLIES[kind])}</ANSWER>"
+    return {"category": "no_tool_v5", "full_text": full_text}
+
+
+def generate_v5_tool_example(rng: random.Random) -> Dict[str, str]:
+    """Samples one non-search V5 tool trace; chains and multi-turn reuse the V4 generator."""
+    category = rng.choices(
+        ["single", "nested", "no_tool", "error", "chain", "multi_turn"],
+        weights=[0.42, 0.24, 0.14, 0.08, 0.06, 0.06],
+        k=1,
+    )[0]
+    if category == "single":
+        return generate_single_tool_v5_example(rng)
+    if category == "nested":
+        return generate_nested_v5_example(rng)
+    if category == "no_tool":
+        return generate_no_tool_v5_example(rng)
+    if category == "error":
+        return generate_error_v5_example(rng)
+    return generate_tool_example(rng, category="multi_tool_chain" if category == "chain" else "multi_turn")
+
+
+def to_tool_item(example: Dict[str, str]) -> Dict[str, str]:
+    """Wraps a generated trace into the encode_joint_batch item format."""
+    full_text = example["full_text"]
+    return {
+        "task_type": "tools",
+        "prompt": full_text.split("</USER>")[0] + "</USER>",
+        "full_text": full_text,
+        "category": example["category"],
+    }
 
 
 def generate_joint_dataset(

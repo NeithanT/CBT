@@ -24,10 +24,10 @@ Small autoregressive Transformers trained from scratch on 1–12 digit addition 
 | **HRM-RoPE (Decoupled 2D-RoPE)** | 1.56M | 8 cycles | 100.0% (1–12d) | 100.0% (18–20d) | N/A (512-tok limit) | 100.0% (20d) | N/A |
 | **CBT-100k ($L=2, R=3$)** | 100,672 | 6 layers (unrolled) | 100.0% (1–12d) | 100.0% (14–20d) | N/A (512-tok limit) | 100.0% (20d) | N/A |
 | **CBT-200k ($L=4, R=3$)** | 197.8k | 12 layers (unrolled) | 100.0% (1–12d) | 100.0% (14–20d) | N/A (512-tok limit) | 100.0% (20d) | 100.0% (50/50) |
-| **CBT-18.95M (`champion_final.pt`)** | **18.95M** | **18 layers (unrolled)** | **100.0% (1–15d)** | **100.0% (180/180)** | **98.8% (237/240)** | **100.0% (20/20 Struct)** | **100.0% (26/26) / 88.9% OOD** |
+| **CBT-18.95M (`champion_final.pt`)** | **18.95M** | **18 layers (unrolled)** | **98.9% (89/90, 8–15d)** | **100.0% (180/180)** | **100.0% (240/240)** | **100.0% (18/18 Struct)** | **80.8% (21/26) / 100% OOD routing** |
 
-- **Shift-Masking Horizon ($p_{\max} = N_{\text{train}} + k = 15 + 32 = 47$)**: Across the 315-problem random multi-carry sweep from 16 to 100 digits (`benchmarks/evaluate_random_16_to_100d.py`), **CBT-18.95M** achieves **100.0% (180/180; 95% Wilson CI `[97.9, 100.0]%`)** across 16–40 digits ($p \le 40$), **93.3–96.7%** at 45–50 digits ($p \approx 47$), and **90.0% (18/20)** at 55 digits, before dropping at 60 digits (**45.0%**), 70 digits (**6.7%**), and 80–100 digits (**0.0%**) once macro column coordinates $p$ exceed the shifted training support.
-- **Zero-Shot OOD Tool Calling**: On 18 unseen OOD prompts, CBT-18.95M routes **88.9% (16/18)** to the intended tool and copies **50.0% (8/16)** of arguments with exact character match (68.8% exact or near-exact).
+- **Shift-Masking Horizon ($p_{\max} = 25 + k = 25 + 45 = 70$)**: Across the 315-problem random multi-carry sweep from 16 to 100 digits (`benchmarks/evaluate_random_16_to_100d.py`), **CBT-18.95M** achieves **100.0% (180/180; 95% Wilson CI `[97.9, 100.0]%`)** across 16–40 digits, **100.0% (60/60)** at 45–50 digits, and **100.0% (20/20)** at 55 digits. Accuracy then falls to **70.0%** at 60 digits, **40.0%** at 70 digits, and **0.0%** at 80–100 digits. The 60-digit errors occur before $p$ reaches $p_{\max}$, so the horizon is approximate for champion.
+- **Zero-Shot OOD Tool Calling**: On 18 fresh OOD prompts, CBT-18.95M routes **100.0% (18/18)** to the intended tool and copies **55.6% (10/18)** of arguments with exact character match.
 
 ---
 

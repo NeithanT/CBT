@@ -194,5 +194,57 @@ class TestExpandedDatasetAndLossMasking(unittest.TestCase):
         print("[PASS] test_prompt_and_result_loss_masking")
 
 
+class TestCurriculumV5(unittest.TestCase):
+    def setUp(self):
+        from champion_model.scaled_t4.sft_search import build_benchmark_holdout, CurriculumV5Stream
+        self.tokenizer = ScaledTokenizer()
+        self.prompts, self.spans = build_benchmark_holdout()
+        self.stream = CurriculumV5Stream(seed=0, prompts=self.prompts, spans=self.spans)
+
+    def test_search_arguments_are_verbatim_user_spans(self):
+        for item in self.stream.search(300):
+            text = item["full_text"]
+            user = text.split("<USER>")[1].split("</USER>")[0]
+            query = text.split('search(query="')[1].split('")')[0]
+            self.assertIn(query, user)
+            for article in ("the ", "a ", "an "):
+                if f" {article}{query}" in f" {user}":
+                    self.assertFalse(query.startswith(article))
+        print("[PASS] test_search_arguments_are_verbatim_user_spans")
+
+    def test_calculator_expression_copied_verbatim(self):
+        n = 0
+        for item in self.stream.tools(1500):
+            if 'calculator(expr="' in item["full_text"] and item["category"] == "single_calculator":
+                expr = item["full_text"].split('calculator(expr="')[1].split('")')[0]
+                self.assertIn(expr, item["prompt"])
+                n += 1
+        self.assertGreater(n, 0)
+        print(f"[PASS] test_calculator_expression_copied_verbatim ({n} samples)")
+
+    def test_benchmark_decontamination(self):
+        from benchmarks.evaluate_champion import audit_contamination
+        items = self.stream.search(1000) + self.stream.tools(3000)
+        corpus = "\n".join(i["full_text"] for i in items)
+        self.assertEqual(audit_contamination(corpus), [])
+        self.assertGreater(len(self.spans), 30)
+        print(f"[PASS] test_benchmark_decontamination ({self.stream.rejected} rejected)")
+
+    def test_dataset_source_passes_benchmark_audit(self):
+        from benchmarks.evaluate_champion import audit_contamination
+        with open(os.path.join(ROOT_DIR, "champion_model/scaled_t4/dataset.py"), encoding="utf-8") as f:
+            src = f.read()
+        self.assertEqual(audit_contamination(src), [])
+        print("[PASS] test_dataset_source_passes_benchmark_audit")
+
+    def test_no_unknown_tokens_and_masking(self):
+        items = self.stream.search(50) + self.stream.tools(150)
+        for item in items:
+            self.assertNotIn(self.tokenizer.unk_id, self.tokenizer.encode(item["full_text"]))
+        x_b, y_b = encode_joint_batch([], items[:8], self.tokenizer)
+        self.assertTrue((y_b != -100).any())
+        print("[PASS] test_no_unknown_tokens_and_masking")
+
+
 if __name__ == "__main__":
     unittest.main()

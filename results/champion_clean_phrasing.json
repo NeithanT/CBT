@@ -1,0 +1,17 @@
+{
+  "checkpoint": "champion_model/scaled_t4/checkpoints/champion_final.pt",
+  "max_train_operand_digits": 25,
+  "phrasing": {
+    "total": 26,
+    "routing_passed": 21,
+    "routing_ci": [
+      62.1,
+      91.5
+    ],
+    "exact_args_passed": 13,
+    "exact_args_ci": [
+      32.1,
+      67.9
+    ]
+  }
+}
