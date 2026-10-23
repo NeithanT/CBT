@@ -61,17 +61,22 @@ def run_sft_probe(model: nn.Module, tokenizer: ScaledTokenizer, device: torch.de
 
     probe_prompts = [
         ("Weather (on Rome)", "<USER>What is the weather on Rome</USER><THINK>", 'get_weather(city="Rome")'),
-        ("Weather (in Tokyo)", "<USER>Weather in Tokyo</USER><THINK>", 'get_weather(city="Tokyo")'),
-        ("Time (in EST)", "<USER>What is the time in EST</USER><THINK>", 'get_time(timezone="EST")'),
-        ("Calculator (*)", "<USER>Calculate 15 * 24</USER><THINK>", "calculator(expr="),
-        ("Unit Convert", "<USER>How many miles is 25 km</USER><THINK>", 'unit_convert(value=25, from_unit="km", to_unit="miles")'),
-        ("Search Real", "<USER>What are tomatoes</USER><THINK>", 'search(query="tomatoes")'),
-        ("Search Nonce", "<USER>What is a bloumplik</USER><THINK>", 'search(query="bloumplik")'),
+        ("Weather (Buenos Aires)", "<USER>What is the weather in Buenos Aires?</USER><THINK>", 'get_weather(city="Buenos Aires")'),
+        ("Weather (for London)", "<USER>Check the weather for London</USER><THINK>", 'get_weather(city="London")'),
+        ("Time (in GMT)", "<USER>What time is it in GMT</USER><THINK>", 'get_time(timezone="GMT")'),
+        ("Calculator (*)", "<USER>Compute 84 * 19</USER><THINK>", 'calculator(expr='),
+        ("Unit Convert", "<USER>How many km is 42 miles</USER><THINK>", 'unit_convert(value=42, from_unit="miles", to_unit="km")'),
+        ("Search (brutalist)", "<USER>Search for brutalist architecture</USER><THINK>", 'search(query="brutalist architecture")'),
+        ("Search (crispr cas9)", "<USER>Explain crispr cas9</USER><THINK>", 'search(query="crispr cas9")'),
+        ("Search (existentialism)", "<USER>What is existentialism?</USER><THINK>", 'search(query="existentialism")'),
+        ("Search (Marcus Aurelius)", "<USER>Who was Marcus Aurelius?</USER><THINK>", 'search(query="Marcus Aurelius")'),
+        ("Search (Multi-Word Nonce)", "<USER>Tell me about Zondar Krell</USER><THINK>", 'search(query="Zondar Krell")'),
         ("Nested JSON", "<USER>Query the top 5 active records in the engineering department.</USER><THINK>", "database_query("),
         ("Math 9-Digit", "123456789+987654321=<THINK>", "1111111110"),
+        ("Math 25-Digit Cascade", "9999999999999999999999999+1=<THINK>", "10000000000000000000000000"),
     ]
 
-    print(f"\n--- [PROBE Step {step}] All-Tools Alignment & Carry Check ---")
+    print(f"\n--- [PROBE Step {step}] Universal All-Tools Alignment & Carry Check ---")
     for label, p, expected in probe_prompts:
         toks = tokenizer.encode(p, add_bos=True, add_eos=False)
         x = torch.tensor([toks], dtype=torch.long, device=device)
@@ -95,19 +100,20 @@ def run_sft_probe(model: nn.Module, tokenizer: ScaledTokenizer, device: torch.de
         else:
             disp = resp
 
-        print(f"  {status} {label:<20} -> {disp}")
-    print("-" * 70 + "\n", flush=True)
+        print(f"  {status} {label:<24} -> {disp}", flush=True)
+    print("-" * 75 + "\n", flush=True)
 
     if was_training:
         raw_model.train()
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ScaledGPT Final All-Tools & Search Annealing SFT")
-    parser.add_argument("--steps", type=int, default=4000, help="SFT steps (default 4000)")
+    parser = argparse.ArgumentParser(description="ScaledGPT Universal Robust SFT Engine (Curriculum V4)")
+    parser.add_argument("--steps", type=int, default=12000, help="SFT steps (default 12000)")
     parser.add_argument("--batch-size", type=int, default=32, help="Per-GPU batch size")
     parser.add_argument("--lr", type=float, default=5.0e-5, help="Peak SFT learning rate for annealing")
-    parser.add_argument("--max-hours", type=float, default=6.0, help="Max training hours")
+    parser.add_argument("--k-rand-shift", type=int, default=45, help="Random shift coordinate horizon (default 45)")
+    parser.add_argument("--max-hours", type=float, default=10.0, help="Max training hours (default 10.0)")
     parser.add_argument("--log-interval", type=int, default=50, help="Logging step interval")
     parser.add_argument("--save-interval", type=int, default=1000, help="Checkpoint save step interval")
     parser.add_argument("--probe-interval", type=int, default=500, help="Probe test step interval")
@@ -115,32 +121,35 @@ def main():
     parser.add_argument(
         "--base-ckpt",
         type=str,
-        default="champion_model/scaled_t4/checkpoints/scaled_t4_sft_search.pt",
+        default="champion_model/scaled_t4/checkpoints/champion_final.pt",
         help="Base checkpoint path",
     )
     parser.add_argument(
         "--save-ckpt",
         type=str,
-        default="champion_model/scaled_t4/checkpoints/champion_final.pt",
+        default="champion_model/scaled_t4/checkpoints/champion_v2_final.pt",
         help="Target checkpoint path",
     )
     args = parser.parse_args()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     tokenizer = ScaledTokenizer()
-    config = ScaledGPTConfig(vocab_size=tokenizer.vocab_size)
+    config = ScaledGPTConfig(vocab_size=tokenizer.vocab_size, k_rand_shift=args.k_rand_shift)
     model = ScaledGPT(config, tokenizer=tokenizer).to(device)
 
-    # Resolve base checkpoint (prioritizing scaled_t4_sft_search_step_7000 / scaled_t4_sft_search.pt)
+    # Resolve base checkpoint (prioritizing champion_final.pt / scaled_t4_sft_all_tools.pt)
     resolved_base = None
     candidates = [
         args.base_ckpt,
         os.path.join(ROOT_DIR, args.base_ckpt),
+        os.path.join(ROOT_DIR, "champion_model/scaled_t4/checkpoints/champion_final.pt"),
+        os.path.join(ROOT_DIR, "champion_model/checkpoints/champion_final.pt"),
+        os.path.join(ROOT_DIR, "champion_model/scaled_t4/checkpoints/scaled_t4_sft_all_tools.pt"),
         os.path.join(ROOT_DIR, "champion_model/scaled_t4/checkpoints/scaled_t4_sft_search.pt"),
         os.path.join(ROOT_DIR, "champion_model/checkpoints/scaled_t4_sft_search_step_7000.zip"),
+        "/kaggle/working/checkpoints/scaled_t4/champion_final.pt",
         "/kaggle/working/checkpoints/scaled_t4/scaled_t4_sft_search.pt",
         os.path.join(ROOT_DIR, "champion_model/scaled_t4/checkpoints/scaled_t4_final.pt"),
-        os.path.join(ROOT_DIR, "champion_model/checkpoints/scaled_t4_final.zip"),
     ]
     for c in candidates:
         if os.path.exists(c) and not os.path.isdir(c):
@@ -150,6 +159,7 @@ def main():
     if resolved_base is not None:
         ckpt_data = torch.load(resolved_base, map_location=device, weights_only=False)
         model.load_state_dict(ckpt_data["model_state_dict"])
+        model.config.k_rand_shift = args.k_rand_shift
         step_tag = f" (from step {ckpt_data.get('step')})" if "step" in ckpt_data else ""
         print(f"[INFO] Successfully loaded base weights{step_tag} from: {resolved_base}")
     else:
@@ -162,37 +172,45 @@ def main():
 
     model.train()
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
-    scheduler = CosineAnnealingLR(optimizer, T_max=max(1, args.steps), eta_min=5e-6)
+    scheduler = CosineAnnealingLR(optimizer, T_max=max(1, args.steps), eta_min=2e-6)
     use_cuda_amp = (device.type == "cuda")
     scaler = torch.amp.GradScaler("cuda", enabled=use_cuda_amp)
 
-    print(f"\n[INFO] Loading SFT datasets (Multi-Tool 55% + Search Copy 35% + Math Replay 10%)...")
-    data_cache = os.path.join(ROOT_DIR, "champion_model/scaled_t4/data/sft_dataset.pt")
+    print(f"\n[INFO] Loading SFT datasets (Curriculum V4: Multi-Tool 45% + Search Copy 35% + Math Replay 20%)...")
+    data_cache = os.path.join(ROOT_DIR, "champion_model/scaled_t4/data/sft_dataset_v4.pt")
     if os.path.exists(data_cache):
         cached = torch.load(data_cache, map_location="cpu", weights_only=False)
-        if cached.get("version") == "v3_all_tools":
-            print(f"[INFO] Found V3 all-tools pre-packaged dataset: {data_cache}")
+        if cached.get("version") == "v4_universal_robust":
+            print(f"[INFO] Found V4 Universal Robust pre-packaged dataset: {data_cache}")
             search_ds = cached["search"]
             math_ds = cached["math"]
             tool_ds = cached["tools"]
         else:
-            print(f"[INFO] Upgrading dataset cache to V3 All-Tools 1-Hop Curriculum...")
-            search_ds = generate_search_delegation_dataset(n_samples=12000, seed=42)
-            math_ds = generate_arithmetic_equations(n_samples=4000, seed=777, max_train_digits=15)
-            tool_ds = generate_tool_dataset(n_samples=20000, seed=888)
+            print(f"[INFO] Upgrading dataset cache to V4 Universal Robust Curriculum...")
+            search_ds = generate_search_delegation_dataset(n_samples=15000, seed=42)
+            math_ds = generate_arithmetic_equations(n_samples=6000, seed=777, max_train_digits=25)
+            tool_ds = generate_tool_dataset(n_samples=25000, seed=888)
             os.makedirs(os.path.dirname(data_cache), exist_ok=True)
             torch.save({
-                "version": "v3_all_tools",
+                "version": "v4_universal_robust",
                 "search": search_ds,
                 "math": math_ds,
                 "tools": tool_ds,
             }, data_cache)
         print(f"       Loaded {len(tool_ds):,} multi-tool, {len(search_ds):,} search, and {len(math_ds):,} math samples.")
     else:
-        print(f"[INFO] Generating V3 All-Tools SFT dataset on-the-fly...")
-        search_ds = generate_search_delegation_dataset(n_samples=12000, seed=42)
-        math_ds = generate_arithmetic_equations(n_samples=4000, seed=777, max_train_digits=15)
-        tool_ds = generate_tool_dataset(n_samples=20000, seed=888)
+        print(f"[INFO] Generating V4 Universal Robust SFT dataset on-the-fly...")
+        search_ds = generate_search_delegation_dataset(n_samples=15000, seed=42)
+        math_ds = generate_arithmetic_equations(n_samples=6000, seed=777, max_train_digits=25)
+        tool_ds = generate_tool_dataset(n_samples=25000, seed=888)
+        os.makedirs(os.path.dirname(data_cache), exist_ok=True)
+        torch.save({
+            "version": "v4_universal_robust",
+            "search": search_ds,
+            "math": math_ds,
+            "tools": tool_ds,
+        }, data_cache)
+        print(f"       Generated and cached {len(tool_ds):,} multi-tool, {len(search_ds):,} search, and {len(math_ds):,} math samples.")
 
     save_path = os.path.join(ROOT_DIR, args.save_ckpt)
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -201,9 +219,9 @@ def main():
     prune_checkpoints(ckpt_dir, keep_last=args.max_keep_ckpts, base_filename=base_name)
 
     print("=" * 80)
-    print(f"STARTING FINAL ALL-TOOLS ANNEALING SFT ({args.steps:,} steps)")
-    print(f"Device: {device} | Peak LR: {args.lr:.2e} -> 5.0e-06 | Batch Size: {args.batch_size}")
-    print(f"Curriculum: 55% Multi-Tool (Weather/Time/Calc/Convert/JSON) + 35% Search Copy + 10% Math Replay")
+    print(f"STARTING UNIVERSAL ROBUST ANNEALING SFT ({args.steps:,} steps)")
+    print(f"Device: {device} | Peak LR: {args.lr:.2e} -> 2.0e-06 | Batch Size: {args.batch_size} | Shift k={args.k_rand_shift}")
+    print(f"Curriculum V4: 45% Multi-Tool + 35% Search Copy + 20% Math Replay (1-25 Digits, k={args.k_rand_shift})")
     print("=" * 80 + "\n", flush=True)
 
     t0 = time.time()
@@ -217,8 +235,8 @@ def main():
             print(f"[WARN] SFT budget reached ({args.max_hours:.1f}h). Halting gracefully.")
             break
 
-        # Batch Composition (32): Math 3 (9.38%), Search 11 (34.38%), Multi-Tools 18 (56.25%)
-        n_m = max(1, int(args.batch_size * 0.10))
+        # Batch Composition (32): Math 6 (18.75%), Search 11 (34.38%), Multi-Tools 15 (46.88%)
+        n_m = max(1, int(args.batch_size * 0.20))
         n_s = max(1, int(args.batch_size * 0.35))
         n_t = args.batch_size - n_m - n_s
 

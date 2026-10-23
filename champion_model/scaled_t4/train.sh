@@ -71,7 +71,7 @@ else
     done
 fi
 
-STEPS="${2:-4000}"
+STEPS="${2:-12000}"
 MODE="${3:-sft}"
 
 show_help() {
@@ -80,24 +80,24 @@ show_help() {
     echo ""
     echo "Arguments:"
     echo "  CHECKPOINT_PATH  Path to base/resume checkpoint (.pt or .zip)"
-    echo "  STEPS            Number of training/SFT steps (Default: 4000)"
+    echo "  STEPS            Number of training/SFT steps (Default: 12000)"
     echo "  MODE             Operation mode: 'sft', 'pretrain', 'eval', 'demo' (Default: sft)"
     echo ""
     echo "Examples:"
-    echo "  # 1. Run Final All-Tools Annealing SFT from step-7000 checkpoint (Default: 4000 steps)"
-    echo "  ./train.sh $DEFAULT_CKPT_DIR/scaled_t4_sft_search.pt"
+    echo "  # 1. Run Universal Robust Annealing SFT from champion_final.pt (Default: 12000 steps)"
+    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_final.pt"
     echo ""
-    echo "  # 2. Run All-Tools Annealing SFT with 5000 steps"
-    echo "  ./train.sh $DEFAULT_CKPT_DIR/scaled_t4_sft_search.pt 5000 sft"
+    echo "  # 2. Run All-Tools Annealing SFT with custom steps"
+    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_final.pt 12000 sft"
     echo ""
     echo "  # 3. Resume full 10-hour pretraining (e.g., Session 2 up to 100k steps)"
     echo "  ./train.sh /kaggle/working/checkpoints/scaled_t4/scaled_t4_final_timeout_step_45059.pt 100000 pretrain"
     echo ""
     echo "  # 4. Run evaluation benchmark on checkpoint"
-    echo "  ./train.sh $DEFAULT_CKPT_DIR/scaled_t4_sft_all_tools.pt 0 eval"
+    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_v2_final.pt 0 eval"
     echo ""
     echo "  # 5. Launch interactive terminal"
-    echo "  ./train.sh $DEFAULT_CKPT_DIR/scaled_t4_sft_all_tools.pt 0 demo"
+    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_v2_final.pt 0 demo"
     echo "================================================================================"
 }
 
@@ -116,9 +116,9 @@ fi
 
 case "$MODE" in
     sft)
-        echo "[INFO] Mode: Final All-Tools & Search Annealing SFT ($STEPS steps)"
-        echo "[INFO] Curriculum: 55% Multi-Tool (Weather/Time/Calc/Convert/JSON) + 35% Search Copy + 10% Math Replay"
-        SAVE_CKPT="$DEFAULT_CKPT_DIR/scaled_t4_sft_all_tools.pt"
+        echo "[INFO] Mode: Universal Robust All-Tools & Search Annealing SFT ($STEPS steps)"
+        echo "[INFO] Curriculum V4: 45% Multi-Tool + 35% Search Copy + 20% Math Replay (1-25 Digits, k=45)"
+        SAVE_CKPT="$DEFAULT_CKPT_DIR/champion_v2_final.pt"
         
         EXTRA_ARGS=()
         if [ -n "$RESOLVED_CKPT" ]; then
@@ -129,6 +129,7 @@ case "$MODE" in
             --steps "$STEPS" \
             --batch-size 32 \
             --lr 5.0e-5 \
+            --k-rand-shift 45 \
             --save-ckpt "$SAVE_CKPT" \
             --max-keep-ckpts 2 \
             "${EXTRA_ARGS[@]}" \

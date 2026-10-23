@@ -23,7 +23,10 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from champion_model.scaled_t4.tokenizer import ScaledTokenizer
+try:
+    from champion_model.scaled_t4.tokenizer import ScaledTokenizer
+except ImportError:
+    from tokenizer import ScaledTokenizer
 
 
 def format_addition_char_scratchpad(a: int, b: int) -> str:
@@ -75,6 +78,8 @@ CITIES = [
     "Rome", "Seoul", "Singapore", "Zurich", "Honolulu", "Reykjavik", "Ouagadougou",
     "Vancouver", "Santiago", "Auckland", "Casablanca", "Vienna", "Stockholm", "Kyoto",
     "Dublin", "Oslo", "Helsinki", "Bangkok", "Cairo", "Lisbon", "Amsterdam", "Athens",
+    "Buenos Aires", "Kuala Lumpur", "Rio de Janeiro", "San Francisco", "Hong Kong",
+    "Los Angeles", "Mexico City", "Cape Town", "Sao Paulo",
 ]
 CONDITIONS = ["Sunny", "Rainy", "Cloudy", "Snowy", "Windy", "Foggy", "Clear"]
 TIMEZONES = ["UTC", "EST", "PST", "GMT", "JST", "CET", "AEST", "CST", "IST", "HST"]
@@ -85,15 +90,36 @@ NONCE_NUCLEI = ["a", "e", "i", "o", "u", "y", "ai", "ea", "ee", "oa", "oo", "ou"
 NONCE_CODAS = ["b", "d", "f", "g", "k", "l", "m", "n", "p", "r", "s", "t", "x", "z", "ck", "nk", "mp", "sh", "th", "nt", "rt"]
 
 
-def generate_nonce_entity(rng: random.Random) -> Tuple[str, str, str]:
-    """Generates an arbitrary pseudo-word entity (singular, plural, type)."""
-    n_syl = rng.choice([1, 2, 2, 3])
+def generate_nonce_entity(rng: random.Random, allow_multi_word: bool = True) -> Tuple[str, str, str]:
+    """Generates an arbitrary pseudo-word entity (singular, plural, type), supporting single and multi-word spans."""
+    ent_type = rng.choice(["concept", "plant", "creature", "artifact", "substance", "person", "theory"])
+
+    # 30% chance of multi-word compound nonce (2-3 words) to train multi-word pointer induction
+    if allow_multi_word and rng.random() < 0.30:
+        n_words = rng.choice([2, 2, 3])
+        words = []
+        for _ in range(n_words):
+            n_syl = rng.choice([1, 2, 2, 3])
+            w = "".join(rng.choice(NONCE_ONSETS) + rng.choice(NONCE_NUCLEI) + rng.choice(NONCE_CODAS) for _ in range(n_syl))
+            words.append(w.capitalize())
+        singular = " ".join(words)
+        last_w = words[-1]
+        plural_last = last_w + ("es" if last_w[-1] in "sxz" else "s")
+        plural = " ".join(words[:-1] + [plural_last])
+        return singular, plural, ent_type
+
+    n_syl = rng.choice([1, 2, 2, 3, 4])
     parts = []
     for _ in range(n_syl):
         parts.append(rng.choice(NONCE_ONSETS) + rng.choice(NONCE_NUCLEI) + rng.choice(NONCE_CODAS))
     singular = "".join(parts)
+
+    # 20% chance of complex morphological suffix to train long-token copy fidelity
+    if rng.random() < 0.20:
+        suffix = rng.choice(["ism", "ology", "ification", "ation", "ological", "ity"])
+        singular = singular + suffix
+
     plural = singular + ("es" if singular[-1] in "sxz" else "s")
-    ent_type = rng.choice(["concept", "plant", "creature", "artifact", "substance"])
     return singular, plural, ent_type
 SEARCH_FACTS = [
     ("Python creator", "Guido van Rossum", "creator"),
@@ -184,6 +210,25 @@ SEARCH_ENTITIES = [
     {"entity": "compiler", "plural": "compilers", "type": "computer science", "snippet": "a computer program that translates computer code written in one language into another."},
     {"entity": "operating system", "plural": "operating systems", "type": "computer science", "snippet": "system software that manages computer hardware, software resources, and common services."},
     {"entity": "neural network", "plural": "neural networks", "type": "computer science", "snippet": "a computational model inspired by the biological neural networks of animal brains."},
+    # Alphanumeric, Scientific & Tech Entities
+    {"entity": "CRISPR Cas9", "plural": "CRISPR Cas9 systems", "type": "genetics", "snippet": "a gene editing technology using an RNA-guided endonuclease enzyme."},
+    {"entity": "Boeing 747", "plural": "Boeing 747 aircraft", "type": "aerospace", "snippet": "a wide-body commercial airliner and cargo transport aircraft."},
+    {"entity": "Apollo 11", "plural": "Apollo missions", "type": "spaceflight", "snippet": "the American spaceflight that first landed humans on the Moon in 1969."},
+    {"entity": "Web3", "plural": "decentralized protocols", "type": "technology", "snippet": "an idea for an iteration of the World Wide Web based on blockchain technology."},
+    {"entity": "Formula 1", "plural": "Formula 1 races", "type": "motorsport", "snippet": "the highest class of international racing for open-wheel single-seater formula cars."},
+    {"entity": "IPv6", "plural": "IPv6 addresses", "type": "networking", "snippet": "the most recent version of the Internet Protocol providing a vast numerical address space."},
+    # Classical, Philosophical & Cultural Terms
+    {"entity": "Marcus Aurelius", "plural": "Roman emperors", "type": "person", "snippet": "a Roman emperor and Stoic philosopher who ruled from 161 to 180 AD."},
+    {"entity": "brutalist architecture", "plural": "brutalist structures", "type": "architecture", "snippet": "an architectural style characterized by minimalist constructions showcasing bare building materials."},
+    {"entity": "existentialism", "plural": "existentialist doctrines", "type": "philosophy", "snippet": "a philosophical inquiry exploring human existence, freedom, and meaning."},
+    {"entity": "Ragnarok", "plural": "mythological battles", "type": "mythology", "snippet": "in Norse mythology, a series of catastrophic events leading to the renewal of the world."},
+    {"entity": "theremin", "plural": "theremins", "type": "instrument", "snippet": "an electronic musical instrument controlled without physical contact by metal antennas."},
+    {"entity": "hyperinflation", "plural": "hyperinflationary cycles", "type": "economics", "snippet": "rapid, excessive, and out-of-control general price increases in an economy."},
+    {"entity": "quantum physics", "plural": "quantum systems", "type": "physics", "snippet": "a fundamental branch of physics that studies nature at the scale of atoms and subatomic particles."},
+    {"entity": "interstellar", "plural": "interstellar regions", "type": "astronomy", "snippet": "the matter and radiation that exists in the space between the star systems in a galaxy."},
+    {"entity": "tiramisu", "plural": "tiramisus", "type": "cuisine", "snippet": "a coffee-flavoured Italian dessert made of ladyfingers dipped in coffee and layered with mascarpone."},
+    {"entity": "neutron stars", "plural": "neutron stars", "type": "astronomy", "snippet": "the collapsed core of a massive supergiant star composed almost entirely of neutrons."},
+    {"entity": "transformers in deep learning", "plural": "transformer architectures", "type": "computer science", "snippet": "a deep learning architecture based on multi-head self-attention mechanisms."},
 ]
 DEPARTMENTS = ["engineering", "marketing", "sales", "finance", "legal", "product"]
 
@@ -477,8 +522,9 @@ def generate_tool_example(rng: random.Random) -> Dict[str, str]:
 
         elif sub == "weather":
             if rng.random() < 0.35:
-                # Nonce city to force pure copy induction
-                city = generate_nonce_entity(rng)[0].capitalize()
+                # Nonce city to force pure copy induction (single or multi-word)
+                nonce_city, _, _ = generate_nonce_entity(rng, allow_multi_word=True)
+                city = " ".join(w.capitalize() for w in nonce_city.split())
             else:
                 city = rng.choice(CITIES)
             temp = rng.randint(-5, 35)
@@ -491,6 +537,7 @@ def generate_tool_example(rng: random.Random) -> Dict[str, str]:
                 f"What is the weather like in {city}{q_mark}",
                 f"How is the weather in {city}{q_mark}",
                 f"How is the weather on {city}{q_mark}",
+                f"How is the weather for {city}{q_mark}",
                 f"Weather in {city}{p_mark}",
                 f"Weather on {city}{p_mark}",
                 f"Weather for {city}{p_mark}",
@@ -498,6 +545,7 @@ def generate_tool_example(rng: random.Random) -> Dict[str, str]:
                 f"Check the weather for {city}{p_mark}",
                 f"Tell me the weather in {city}{p_mark}",
                 f"Forecast for {city}{p_mark}",
+                f"{city} weather{p_mark}",
             ])
             thought = rng.choice([
                 "The user requests current weather information. I will query the get_weather tool.",
@@ -510,7 +558,7 @@ def generate_tool_example(rng: random.Random) -> Dict[str, str]:
         elif sub == "search":
             search_mode = rng.random()
             if search_mode < 0.50:
-                ent, plural, ent_type = generate_nonce_entity(rng)
+                ent, plural, ent_type = generate_nonce_entity(rng, allow_multi_word=True)
                 snippet = f"a hypothetical {ent_type} characterized in general knowledge."
             elif search_mode < 0.85 and bool(SEARCH_ENTITIES):
                 ent_item = rng.choice(SEARCH_ENTITIES)
@@ -529,6 +577,9 @@ def generate_tool_example(rng: random.Random) -> Dict[str, str]:
                     "tell_me_about",
                     "explain",
                     "define",
+                    "search_for",
+                    "lookup",
+                    "who_is",
                 ])
 
                 if variant == "what_are_plural":
@@ -552,6 +603,19 @@ def generate_tool_example(rng: random.Random) -> Dict[str, str]:
                     user_prompt = f"Explain {ent}{p_mark}"
                     search_q = ent
                     answer = f"{ent.capitalize()} is {snippet}"
+                elif variant == "search_for":
+                    user_prompt = f"Search for {ent}{p_mark}"
+                    search_q = ent
+                    answer = f"Search results indicate {ent} is {snippet}"
+                elif variant == "lookup":
+                    user_prompt = f"Look up {ent}{p_mark}"
+                    search_q = ent
+                    answer = f"Information for {ent}: {snippet}"
+                elif variant == "who_is" and ent_type in ["person", "creature"]:
+                    prefix = "Who was" if rng.random() < 0.5 else "Who is"
+                    user_prompt = f"{prefix} {ent}{q_mark}"
+                    search_q = ent
+                    answer = f"{ent} is {snippet}"
                 else:
                     user_prompt = f"What is {ent}{q_mark}"
                     search_q = ent
