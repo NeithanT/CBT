@@ -5,6 +5,7 @@ across unseen digit lengths from 16 to 100 digits, logging per-length accuracy,
 internal scratchpad accuracy, 95% Wilson confidence intervals, and failure modes.
 """
 
+import argparse
 import json
 import math
 import os
@@ -204,28 +205,40 @@ def sample_problems_for_length(d: int, n_samples: int, rng: random.Random) -> Li
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Evaluate CBT Arithmetic Extrapolation")
+    parser.add_argument("--ckpt", type=str, default="champion_model/scaled_t4/checkpoints/champion_final.pt")
+    parser.add_argument("--samples", type=int, default=None, help="Override sample count per length")
+    parser.add_argument("--max-digits", type=int, default=100, help="Maximum digit length to evaluate")
+    parser.add_argument("--out-json", type=str, default="results/random_extrapolation_16_to_100d.json")
+    args = parser.parse_args()
+
     tok = ScaledTokenizer()
     ckpt = torch.load(
-        "champion_model/scaled_t4/checkpoints/champion_final.pt",
+        args.ckpt,
         map_location="cpu",
         weights_only=False,
     )
-    config = ScaledGPTConfig(
-        vocab_size=tok.vocab_size,
-        block_size=2048,
-        n_layer=6,
-        n_head=8,
-        n_embd=512,
-        n_recur=3,
-        max_coords=4096,
-        k_rand_shift=32,
-    )
+    if "config" in ckpt and ckpt["config"] is not None:
+        config = ckpt["config"]
+        config.block_size = max(config.block_size, 2048)
+    else:
+        config = ScaledGPTConfig(
+            vocab_size=tok.vocab_size,
+            block_size=2048,
+            n_layer=6,
+            n_head=8,
+            n_embd=512,
+            n_recur=3,
+            max_coords=4096,
+            k_rand_shift=32,
+        )
     model = ScaledGPT(config, tok)
     state = {k.replace("module.", "").replace("_orig_mod.", ""): v for k, v in ckpt["model_state_dict"].items()}
     model.load_state_dict(state, strict=False)
     model.eval()
 
-    lengths = [16, 20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 80, 100]
+    all_lengths = [16, 20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 80, 100]
+    lengths = [d for d in all_lengths if d <= args.max_digits]
     samples_per_len = {
         16: 30,
         20: 30,
@@ -241,13 +254,15 @@ def main() -> None:
         80: 10,
         100: 10,
     }
+    if args.samples is not None:
+        samples_per_len = {d: args.samples for d in lengths}
 
     rng = random.Random(20261021)
     all_results: Dict[str, Any] = {"per_length": {}, "failures": []}
     t_global = time.time()
 
     print("=" * 95, flush=True)
-    print("EXPANDED RANDOM EXTRAPOLATION SWEEP (16 TO 100 DIGITS) ON CBT-18.95M (champion_final.pt)", flush=True)
+    print(f"EXPANDED RANDOM EXTRAPOLATION SWEEP (16 TO {args.max_digits} DIGITS) ON CBT ({args.ckpt})", flush=True)
     print("=" * 95, flush=True)
 
     for d in lengths:
@@ -350,7 +365,7 @@ def main() -> None:
     }
     all_results["total_elapsed_sec"] = round(time.time() - t_global, 2)
 
-    out_path = "results/random_extrapolation_16_to_100d.json"
+    out_path = args.out_json
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(all_results, f, indent=2)
 

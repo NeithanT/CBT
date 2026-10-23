@@ -325,14 +325,37 @@ OOD Architecture & \texttt{Search for brutalist architecture} & \texttt{<CALL>ge
 }
 \end{table*}
 
-\subsection{Unified Capabilities of CBT-18.95M: Sums, Multi-Tool Routing, and OOD Copying}
+\subsection{Unified Capabilities of CBT-18.95M: Sums, Multi-Tool Routing, and OOD Copying}\label{sec:v2}
 
 Tables~\ref{tab:unified_18m}, \ref{tab:itemized_math}, \ref{tab:random_16_100d}, \ref{tab:stage3_all_tools}, and \ref{tab:ood_queries} present the comprehensive evaluation of our final \textbf{CBT-18.95M} model (\texttt{champion\_final.pt}):
 \begin{enumerate}[leftmargin=*,nosep]
     \item \textbf{Zero-Shot Extrapolation from 15 Seen Digits Across 16--100 Unseen Digits (Tables~\ref{tab:itemized_math} and \ref{tab:random_16_100d})}: Trained strictly on numbers of $1 \le N \le 15$ digits with shift masking $k=32$ (exposing macro column coordinates up to $p_{\max} = 15 + 32 = 47$), CBT-18.95M solves \textbf{20/20 (100.0\%; CI $[83.9, 100.0]\%$)} structured 16--50 digit sums (including $\underbrace{99\dots99}_{50} + 1 = 10^{50}$). To test beyond structured patterns and map the exact breakdown horizon, we evaluated 315 stratified random multi-carry problems across 13 lengths from 16 to 100 digits (Table~\ref{tab:random_16_100d}; 70\% uniform random digits, 15\% dense carries with $a_i + b_i \ge 9$, 15\% cascade chains). Across all 6 tested lengths within the shift-masked coordinate support ($d \in \{16, 20, 25, 30, 35, 40\}$, $p \le 40 \le p_{\max}$), CBT-18.95M achieves \textbf{180/180 (100.0\%; 95\% Wilson CI $[97.9, 100.0]\%$)} exact match. Across the full 16--50 digit random suite ($n = 240$), it achieves \textbf{237/240 (98.8\%; CI $[96.4, 99.6]\%$)} final answer exact match and \textbf{238/240 (99.2\%; CI $[97.0, 99.8]\%$)} \texttt{<THINK>} scratchpad exact match, with \textbf{zero \texttt{(} delimiter errors} and zero off-by-one readout errors (the only 3 errors at $d=45, 50$ were single-digit substitutions at the $p \approx 47$ boundary). Beyond $p_{\max} = 47$, accuracy remains \textbf{90.0\% (18/20)} at 55 digits ($p \le 55$, $+8$ columns beyond shifted training support), then drops to \textbf{45.0\% (9/20)} at 60 digits, \textbf{6.7\% (1/15)} at 70 digits, and \textbf{0.0\%} at 80--100 digits. This empirically demonstrates that Decoupled 2D-RoPE generalizes reliably across unseen sequence lengths $N > N_{\text{train}}$ \emph{up to the maximum coordinate index $p_{\max} = N_{\text{train}} + k$ covered by shift masking during training}, and degrades once $p$ enters rotary angles never observed during training.
     \item \textbf{Stage 3 All-Tools 1-Hop Alignment (Table~\ref{tab:stage3_all_tools}, 100.0\% Routing, 96.2\% Exact Args)}: In Stage 2 (\texttt{step\_7000}), applying 1-hop copy induction only to \texttt{search} caused prompts with varied prepositions (like \texttt{"What is the weather on Rome"} or \texttt{"How many miles is 25 km"}) to over-route to \texttt{search}. In Stage 3 (\texttt{champion\_final.pt}), transitioning \emph{all nine tool schemas} (\texttt{get\_weather}, \texttt{get\_time}, \texttt{calculator}, \texttt{unit\_convert}, \texttt{database\_query}, \texttt{fetch\_api}, \texttt{create\_event}, \texttt{file\_manager}, and \texttt{search}) to the entity-agnostic \texttt{<THINK>} + 1-hop \texttt{<CALL>} pointer architecture achieved \textbf{100.0\% (26/26) tool routing} and \textbf{96.2\% (25/26) exact argument extraction}, even routing unseen nonce cities (\texttt{"What is the weather in Bloumplik?"} $\to$ \texttt{get\_weather(city="Bloumplik")}). Caveat: Stage 3 was trained on the prepositions and templates used in this 26-case suite, whereas Stage 2 never saw them, so the Stage 2 versus Stage 3 comparison is not informative about generalization to new syntax. We did not measure template overlap between the 26 cases and the training generator, and we have no held-out paraphrase set.
     \item \textbf{Zero-Shot Out-of-Distribution (OOD) Generalization (Table~\ref{tab:ood_queries})}: On 18 unseen prompts, CBT-18.95M produced well-formed tags for all 18 (18/18) and routed 16/18 (88.9\%) to the intended tool. Among the 16 routed cases, \textbf{8 (50.0\%) copied the argument exactly}; 3 more were near-exact (\texttt{"existentialis"}, \texttt{"zagnarok"}, \texttt{"844 *19"}), giving 11/16 (68.8\%) as a secondary, more lenient figure. Because a near-exact string is an incorrect tool argument, exact match is the relevant metric. Exact copies include single words and short lowercase phrases (\texttt{"quantum physics"}, \texttt{"interstellar"}, \texttt{"hyperinflation"}, \texttt{"tiramisu"}, \texttt{"neutron stars"}, \texttt{"Reykjavik"}), but single-word copying is \emph{not} perfect (\texttt{"existentialism"}, \texttt{"Ragnarok"}, \texttt{"theremin"} fail). Multi-word capitalized proper nouns (\texttt{"Buenos Aires"} $\to$ \texttt{"Buris"}, \texttt{"Marcus Aurelius"} $\to$ \texttt{"Arcusnaus"}, \texttt{"Kuala Lumpur"} $\to$ \texttt{"Vuala"}) blend or truncate, plausibly because the synthetic nonce generator trains on single-word pseudowords (a hypothesis we did not test). An embedded digit (\texttt{"crispr cas9"}) and a preposition (\texttt{"Search for ..."}) each caused a mis-route.
+    \item \textbf{Uncontaminated Unseen-Entity Evaluation and the v2 SFT Checkpoint (Table~\ref{tab:unseen_ood})}: Because the Table~\ref{tab:ood_queries} entities and the 26-case tool suite overlap with training templates and entity lists (and several Table~\ref{tab:ood_queries} entities were added to the training lists of the later checkpoint), we ran a new test on 30 unseen entities (\texttt{benchmarks/evaluate\_unseen\_ood.py}; zero overlap with the training city, search-entity, and search-fact lists was verified). We compare \texttt{champion\_final.pt} (v1) with a second SFT run, \texttt{champion\_v2\_final.pt} (v2; SHA256 \texttt{634bf18e...3a13}; 12,000 SFT steps, loss \texttt{0.0034}, wider shift range $k=45$, $p_{\max}=70$, expanded tool curriculum). These numbers are lower than the template-matched ones above, and we regard them as the more representative figures. On unseen entities, v2 raises exact argument copying from 13.3\% to 56.7\% (largest gains on science terms, foods/artifacts, and nonce words). The v2 interval spans 50\% and a one-sided binomial test against 50\% gives $p=0.29$, so we do not claim that v2 copies more than half of unseen arguments. The drop on the 26-case suite from 100\% to 80.8\% routing is expected to be partly an artifact of v1 having been tuned on that suite; v2 fails \texttt{database\_query}, \texttt{fetch\_api}, \texttt{create\_event}, and \texttt{file\_manager} (one case each) and issues a spurious \texttt{get\_weather} call for ``Hello, how are you today?'', and an embedded digit (\texttt{crispr cas9}) still mis-routes. Arithmetic is unchanged within statistical resolution; v2 was evaluated only up to 55 digits, so the benefit of $p_{\max}=70$ is untested beyond that.
 \end{enumerate}
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Entity-Disjoint Unseen OOD Benchmark (30 Prompts) and Other v2 Results} (single run, greedy decoding).}
+\label{tab:unseen_ood}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Metric} & \textbf{v1} & \textbf{v2} & \textbf{Note} \\
+\midrule
+Unseen OOD routing (30) & 28/30 (93.3\%) & 29/30 (96.7\%) & Fisher $p=1.000$ \\
+\textbf{Unseen OOD exact copy (30)} & 4/30 (13.3\%) & \textbf{17/30 (56.7\%)} & Fisher $p=0.0008$ \\
+Exact copy given routed & 4/28 (14.3\%) & 17/29 (58.6\%) & \\
+Figures / Cities (6 each) & 0/6, 0/6 & 1/6, 2/6 & \\
+Science / Concepts / Nonces (6 each) & 1/6, 2/6, 1/6 & 5/6, 5/6, 4/6 & \\
+26-case tools, routing / args & 26/26, 25/26 & 21/26, 19/26 & v1 tuned on suite \\
+Random sums 16--50d & 237/240 (98.8\%) & 80/80 (100.0\%) & $p=1.000$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
 
 \begin{table*}[t]
 \centering
@@ -520,38 +543,6 @@ To rigorously isolate the mechanisms governing length generalization, we conduct
     \item \textbf{Place-Only Ablation ($p$-Only, $\tau=0$)}: To test whether the intra-column micro-step coordinate $\tau$ is necessary or if place alignment alone suffices, we set $\tau=0$ during both training and inference ($k=32$). The $p$-only model achieves $99.8\%$ on seen 8--15 digits and averages $96.2\%$ across 16--30 digits ($100.0\%$ at 16d, $99.5\%$ at 20d, $99.0\%$ at 25d, $97.5\%$ at 30d, $85.0\%$ at 35d). This demonstrates that the macro place coordinate $p$ alone carries the underlying length-invariant algorithmic scaffold. However, full 2D-RoPE provides greater robustness near the cliff boundary ($58.0\%$ vs.\ $41.5\%$ at 40d; $30.5\%$ vs.\ $9.5\%$ at 45d), showing that $\tau$ provides secondary stabilization against phase dispersion during token generation.
     \item \textbf{1D Baseline Retraining with Extended Budget}: To determine whether 1D failures in Table~\ref{tab:equalized_15d_1024} were merely artifacts of insufficient training steps, we retrained 1D-RoPE with double the step budget (6,000 steps) and a tuned learning rate ($\mathrm{LR}=8\times 10^{-4}$). The retrained model attained only $28.0\%$ accuracy on 8-digit additions and collapsed to $0.0\%$ on 12- and 15-digit sums (as well as all unseen lengths). In contrast to 2D models which converge smoothly to zero loss, flat 1D coordinates in long-context scratchpads create an intractable optimization landscape for compact Transformers.
 \end{enumerate}
-
-\subsection{CBT-18.95M v2: Revised Tool SFT and Wider Shift Support}
-\label{sec:v2}
-
-We trained a second checkpoint, \texttt{champion\_v2\_final.pt} (SHA256 \texttt{634bf18e...3a13}; 12,000 SFT steps, final loss \texttt{0.0034}, cosine LR $5\times10^{-5} \to 2\times10^{-6}$), with the same architecture but a wider shift range $k=45$ ($p_{\max}=70$) and a revised tool curriculum (V4) that adds more entities and phrasings. Full numbers are in \texttt{results/champion\_v2\_performance\_report.md}. Evaluation is single-run and greedy.
-
-\begin{table}[t]
-\centering
-\caption{\textbf{CBT-18.95M v1 (\texttt{champion\_final.pt}) vs.\ v2 (\texttt{champion\_v2\_final.pt})}. The 30-prompt unseen set has zero entity overlap with training lists; the 18-prompt set does not.}
-\label{tab:v2}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{@{}lccc@{}}
-\toprule
-\textbf{Metric} & \textbf{v1} & \textbf{v2} & \textbf{Note} \\
-\midrule
-Random sums, 16--50d & 237/240 (98.8\%) & 80/80 (100.0\%) & Fisher $p=1.000$ \\
-Random sums, 55d & 18/20 (90.0\%) & 10/10 (100.0\%) & $n=10$/len for v2 \\
-26-case tools, routing & 26/26 (100.0\%) & 21/26 (80.8\%) & v1 tuned on suite \\
-26-case tools, exact args & 25/26 (96.2\%) & 19/26 (73.1\%) & \\
-18-prompt OOD, exact & 8/18 (44.4\%) & 16/18 (88.9\%) & entity leakage \\
-30-prompt unseen, routing & 28/30 (93.3\%) & 29/30 (96.7\%) & $p=1.000$ \\
-\textbf{30-prompt unseen, exact} & 4/30 (13.3\%) & \textbf{17/30 (56.7\%)} & Fisher $p=0.0008$ \\
-\bottomrule
-\end{tabular}%
-}
-\end{table}
-
-The 30-prompt set (\texttt{benchmarks/evaluate\_unseen\_ood.py}) was checked to have zero overlap with the training city, search-entity, and search-fact lists, so it is the only OOD comparison in this paper free of entity leakage. On it, v2 improves exact argument copying from 13.3\% to 56.7\% (CI $[39.2, 72.6]\%$), with the largest gains on science terms (1/6 to 5/6) and foods/artifacts (2/6 to 5/6), and smaller gains on cities (0/6 to 2/6), historical figures (0/6 to 1/6), and nonce words (1/6 to 4/6). The v2 interval spans 50\%, and a one-sided binomial test against 50\% gives $p=0.29$, so we do not claim v2 copies more than half of unseen arguments.
-
-Arithmetic is unchanged within statistical resolution (100.0\% on 90 random problems at 16--55 digits, $n=10$ per length, per-length CI lower bound 72.2\%). We did not extend the v2 sweep past 55 digits, so the benefit of $p_{\max}=70$ over $p_{\max}=47$ is untested beyond 55 digits.
-
-v2 regresses on structured tool cases: \texttt{database\_query}, \texttt{fetch\_api}, \texttt{create\_event}, and \texttt{file\_manager} each fail their single test case, ``Hello, how are you today?'' triggers a spurious \texttt{get\_weather} call, and an embedded digit (\texttt{crispr cas9}) still causes a mis-route. v2 is therefore better at copying unseen entities but worse at routing rarer tool schemas, and v1 remains the better model for the 26-case suite; that regression partly reflects v1 having been tuned on that suite, so the two rows are not directly comparable.
 
 \section{Architecture, 2D Matrix Embeddings, Tokenizer, and Training Data}
 \label{sec:architecture}

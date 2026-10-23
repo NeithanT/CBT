@@ -162,7 +162,7 @@ def evaluate_phrasing_suite(model: ScaledGPT, tokenizer: ScaledTokenizer, device
 
         status_tag = "[PASS]" if args_ok else ("[ROUTE_OK]" if route_ok else "[FAIL]")
         disp_resp = f"<CALL>{call_content}</CALL>" if call_content else resp[:50]
-        print(f"  {status_tag:<10} {item['label']:<24} -> {disp_resp}")
+        print(f"  {status_tag:<10} {item['label']:<24} -> {disp_resp}", flush=True)
 
     route_pct = 100.0 * routing_passed / total
     args_pct = 100.0 * exact_args_passed / total
@@ -220,7 +220,7 @@ def evaluate_ood_suite(model: ScaledGPT, tokenizer: ScaledTokenizer, device: tor
 
         status_tag = "[EXACT]" if is_exact else ("[ROUTED]" if is_routed else "[DRIFT]")
         disp_resp = f"<CALL>{call_content}</CALL>" if call_content else resp[:50]
-        print(f"  {status_tag:<8} {item['domain']:<22} -> {disp_resp}")
+        print(f"  {status_tag:<8} {item['domain']:<22} -> {disp_resp}", flush=True)
 
     route_pct = 100.0 * routed / total
     exact_pct = 100.0 * exact_matches / max(1, routed)
@@ -303,7 +303,7 @@ def evaluate_arithmetic_suite(
         per_length_stats[digits] = {"passed": passed, "total": samples_per_length, "accuracy_pct": pct, "ci": ci}
 
         status = "[PASS]" if passed == samples_per_length else "[FAIL]"
-        print(f"  {status} {digits:2d} Digits: {passed:2d}/{samples_per_length:2d} ({pct:5.1f}%, 95% CI {ci}%) | {elapsed:.1f}s")
+        print(f"  {status} {digits:2d} Digits: {passed:2d}/{samples_per_length:2d} ({pct:5.1f}%, 95% CI {ci}%) | {elapsed:.1f}s", flush=True)
 
     pooled_pct = 100.0 * pooled_passed / pooled_total
     pooled_ci = wilson_ci(pooled_passed, pooled_total)
