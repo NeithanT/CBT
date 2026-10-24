@@ -6,12 +6,13 @@ Addresses the two primary reviewer requests:
    same 1-15 digit dataset and token budget.
 2. Evaluates 200 random multi-carry problems at every length from 16 to 100 digits (2,600 problems
    per model) with 95% Wilson confidence intervals using KV-cached batched greedy decoding.
-3. Also evaluates the 18.91M 1D-Char checkpoint (`checkpoints/model_1/model_1_final.pt`) and
+3. Also evaluates the 18.91M 1D-Char checkpoint (`checkpoints/baselines_18m/char_1d_rope_scratchpad_12d.pt`) and
    1.56M HRM-RoPE checkpoint at extended T=1024 context on the 25-50 digit problems of Table 3.
 """
 
 import json
 import math
+import argparse
 import os
 import random
 import sys
@@ -36,6 +37,14 @@ from champion_model.math_model.model import (
 )
 from src.tokenizer import MathTokenizer
 from src.arithmetic import format_addition_char_scratchpad, extract_scratchpad_answer
+
+
+CKPT_NAMES: Dict[str, str] = {
+    "1d_standard_15d_1024": "1d_rope_k0",
+    "1d_shift512_15d_1024": "1d_rope_offset512",
+    "1d_ruoss_15d_1024": "1d_ruoss_randpos",
+    "2d_shift32_15d_1024": "2d_rope_k32",
+}
 
 
 def wilson_ci(k: int, n: int, z: float = 1.96) -> Tuple[float, float]:
@@ -473,12 +482,12 @@ def generate_random_problems_for_length(d: int, n_problems: int, rng: random.Ran
 
 
 def evaluate_18m_1d_char_at_1024_context() -> Dict[str, Any]:
-    """Evaluates the 18.91M 1D-Char checkpoint (`checkpoints/model_1/model_1_final.pt`) with T=1024 RoPE on Part III (25-50d)."""
-    ckpt_path = os.path.join(ROOT_DIR, "checkpoints/model_1/model_1_final.pt")
+    """Evaluates the 18.91M 1D-Char checkpoint (`checkpoints/baselines_18m/char_1d_rope_scratchpad_12d.pt`) with T=1024 RoPE on Part III (25-50d)."""
+    ckpt_path = os.path.join(ROOT_DIR, "checkpoints/baselines_18m/char_1d_rope_scratchpad_12d.pt")
     if not os.path.exists(ckpt_path):
         return {}
     print("\n" + "=" * 90, flush=True)
-    print("EVALUATING 18.91M 1D-CHAR (model_1_final.pt) WITH EXTENDED T=1024 CONTEXT ON 25-50d", flush=True)
+    print("EVALUATING 18.91M 1D-CHAR (char_1d_rope_scratchpad_12d.pt) WITH EXTENDED T=1024 CONTEXT ON 25-50d", flush=True)
     print("=" * 90, flush=True)
 
     ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
@@ -527,7 +536,12 @@ def evaluate_18m_1d_char_at_1024_context() -> Dict[str, Any]:
 
 
 def main():
-    torch.set_num_threads(16)
+    parser = argparse.ArgumentParser(description="Equalized 1-15d, T=1024 1D vs 2D comparison")
+    parser.add_argument("--eval-only", action="store_true", help="Load saved checkpoints instead of retraining")
+    parser.add_argument("--threads", type=int, default=16, help="CPU threads")
+    parser.add_argument("--out-json", type=str, default="results/equalized_15d_1024_and_ruoss_sweep.json")
+    args = parser.parse_args()
+    torch.set_num_threads(args.threads)
     tokenizer = MathTokenizer()
 
     # 1. Test 18.91M 1D-Char at T=1024 on 25-50d
@@ -552,7 +566,7 @@ def main():
     ]
 
     trained_models: Dict[str, Tuple[MathGPT, Dict[str, Any]]] = {}
-    os.makedirs(os.path.join(ROOT_DIR, "checkpoints/equalized_15d_1024"), exist_ok=True)
+    os.makedirs(os.path.join(ROOT_DIR, "checkpoints/ablations_100k_15d_1024"), exist_ok=True)
 
     for model_id, label, pos_emb_type, pos_mode, n_recur, k_shift in configs:
         print("\n" + "-" * 90, flush=True)
@@ -578,18 +592,24 @@ def main():
                 block.attn.rope_cos = cos
                 block.attn.rope_sin = sin
 
-        final_loss, train_sec = train_equalized_model(
-            model=model,
-            dataset=dataset,
-            pad_id=tokenizer.pad_id,
-            pos_mode=pos_mode,
-            k_shift=k_shift,
-            steps=3000,
-            batch_size=32,
-            lr=2e-3,
-            seed=42,
-        )
-        torch.save(model.state_dict(), os.path.join(ROOT_DIR, "checkpoints/equalized_15d_1024", f"{model_id}.pt"))
+        ckpt_path = os.path.join(ROOT_DIR, "checkpoints/ablations_100k_15d_1024", f"{CKPT_NAMES[model_id]}.pt")
+        if args.eval_only and os.path.exists(ckpt_path):
+            print(f"Loading existing checkpoint: {ckpt_path}", flush=True)
+            model.load_state_dict(torch.load(ckpt_path, map_location="cpu"))
+            final_loss, train_sec = float("nan"), 0.0
+        else:
+            final_loss, train_sec = train_equalized_model(
+                model=model,
+                dataset=dataset,
+                pad_id=tokenizer.pad_id,
+                pos_mode=pos_mode,
+                k_shift=k_shift,
+                steps=3000,
+                batch_size=32,
+                lr=2e-3,
+                seed=42,
+            )
+            torch.save(model.state_dict(), ckpt_path)
         trained_models[model_id] = (
             model,
             {
@@ -678,7 +698,7 @@ def main():
         "part3_18m_1d_at_1024_context": part3_18m_1d,
         "equalized_15d_1024_comparison": equalized_results,
     }
-    out_path = os.path.join(ROOT_DIR, "results/equalized_15d_1024_and_ruoss_sweep.json")
+    out_path = os.path.join(ROOT_DIR, args.out_json)
     with open(out_path, "w") as f:
         json.dump(out_payload, f, indent=2)
     print(f"\n[PASS] Saved complete equalized 1-15d T=1024 + Ruoss et al. comparison (12,800 total test problems) to {out_path}", flush=True)

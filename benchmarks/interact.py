@@ -138,7 +138,7 @@ def main():
     parser.add_argument("--head", type=int, default=0, help="Attention head to visualize")
     args = parser.parse_args()
 
-    champion_ckpt = os.path.join(ROOT_DIR, "champion_model", "scaled_t4", "checkpoints", "champion_final.pt")
+    champion_ckpt = os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt")
 
     # If no specific checkpoint is passed, try champion model or pull from Hugging Face
     if args.checkpoint is None:
@@ -146,11 +146,8 @@ def main():
             try:
                 from huggingface_hub import hf_hub_download
                 print("[INFO] Champion weights not found locally. Pulling from Hugging Face (Neithanvarvas/CBT)...")
-                champion_ckpt = hf_hub_download(
-                    repo_id="Neithanvarvas/CBT",
-                    filename="champion_final.pt",
-                    local_dir=os.path.dirname(champion_ckpt)
-                )
+                from benchmarks.download_from_hf import download_champion_weights
+                champion_ckpt = download_champion_weights()
             except Exception as e:
                 print(f"[WARN] Automatic Hugging Face pull unsuccessful: {e}")
 
@@ -205,11 +202,10 @@ def main():
             return
 
     # Fallback to legacy MathGPT checkpoint loader
-    ckpt = args.checkpoint or os.path.join(ROOT_DIR, "checkpoints", "baseline", "math_gpt.pt")
+    ckpt = args.checkpoint or os.path.join(ROOT_DIR, "checkpoints", "toy_baselines", "v25_abspos_3l96d.pt")
     if not os.path.exists(ckpt):
         for candidate in [
-            os.path.join(ROOT_DIR, "checkpoints", "baseline", "math_gpt.pt"),
-            os.path.join(ROOT_DIR, "checkpoints", "model_1", "model_1_final_8h.pt"),
+            os.path.join(ROOT_DIR, "checkpoints", "toy_baselines", "v25_abspos_3l96d.pt"),
             os.path.join(ROOT_DIR, "math_gpt.pt"),
         ]:
             if os.path.exists(candidate):

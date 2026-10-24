@@ -328,7 +328,7 @@ def run_100_benchmark(checkpoint_path: str, output_dir: str, device_name: str = 
 
 
 if __name__ == "__main__":
-    ckpt = os.path.join(WORKING_MODEL_DIR, "checkpoints", "hrm_rope_c1_final.pt")
+    ckpt = os.path.join(REPO_ROOT, "checkpoints", "architectures_char", "hrm_2d_rope_k32_12d.pt")
     out_dir = os.path.join(REPO_ROOT, "results", "benchmark_results")
     dev = "cuda:0" if torch.cuda.is_available() else "cpu"
     run_100_benchmark(checkpoint_path=ckpt, output_dir=out_dir, device_name=dev)

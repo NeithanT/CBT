@@ -41,6 +41,20 @@ from benchmarks.extrapolation import evaluate_extrapolation_char, evaluate_extra
 
 DEFAULT_TARGET_TOKENS = 400_000_000
 
+# Final weights: checkpoints/<family>/<run>.pt; token snapshots: checkpoints/<family>/snapshots/<run>/tokNNNM.pt
+BASELINE_FAMILY = "baselines_18m"
+ARCHITECTURE_FAMILY = "architectures_char"
+ARCHITECTURE_RUN_NAMES: Dict[str, str] = {
+    "looped": "looped2x6_1d_rope_12d",
+    "hierarchical": "hierarchical_f4s3_1d_rope_12d",
+    "hybrid": "hybrid_glru_attn_1d_rope_12d",
+    "hnrm": "hnrm_harmonic_12d",
+    "alsm": "alsm_looped4x6_abacus_k32_12d",
+    "micromath": "micromath_abacus_k32_12d",
+    "hrm_rope": "hrm_2d_rope_k32_12d",
+    "hrm_text": "hrm_text_1d_rope_12d",
+}
+
 
 def sync_checkpoint_to_kaggle(ckpt_path: str, model_type: str):
     """If running inside a Kaggle notebook, mirror checkpoint directly to /kaggle/working/checkpoints/."""
@@ -59,32 +73,28 @@ def sync_checkpoint_to_kaggle(ckpt_path: str, model_type: str):
 CONDITION_METADATA: Dict[int, Dict[str, Any]] = {
     1: {
         "name": "Model 1: Character Math Tokenizer (100% Math with Scratchpad)",
-        "ckpt_dir": os.path.join(ROOT_DIR, "checkpoints", "model_1"),
-        "ckpt_prefix": "model_1",
+        "run_name": "char_1d_rope_scratchpad_12d",
         "tokenizer_cls": MathTokenizer,
         "is_bpe": False,
         "eval_fn": evaluate_extrapolation_char,
     },
     2: {
         "name": "Model 2: Subword BPE Tokenizer (100% Math with Word-CoT)",
-        "ckpt_dir": os.path.join(ROOT_DIR, "checkpoints", "model_2"),
-        "ckpt_prefix": "model_2",
+        "run_name": "bpe50k_1d_rope_wordcot_12d",
         "tokenizer_cls": BPEMathTokenizer,
         "is_bpe": True,
         "eval_fn": evaluate_extrapolation_bpe,
     },
     3: {
         "name": "Model 3: Subword BPE (50% Math Word-CoT + 50% Philosophy Text)",
-        "ckpt_dir": os.path.join(ROOT_DIR, "checkpoints", "model_3"),
-        "ckpt_prefix": "model_3",
+        "run_name": "bpe50k_1d_rope_wordcot_philo50_12d",
         "tokenizer_cls": BPEMathTokenizer,
         "is_bpe": True,
         "eval_fn": evaluate_extrapolation_bpe,
     },
     4: {
         "name": "Model 4: Place-Value Zero-Reduction Thinking",
-        "ckpt_dir": os.path.join(ROOT_DIR, "checkpoints", "model_4"),
-        "ckpt_prefix": "model_4",
+        "run_name": "char_1d_rope_placevalue_12d",
         "tokenizer_cls": MathTokenizer,
         "is_bpe": False,
         "eval_fn": evaluate_extrapolation_char,
@@ -273,14 +283,17 @@ def train_condition(condition: int, args: Optional[argparse.Namespace] = None):
     device, rank, local_rank, world_size, is_master = init_distributed_mode(args)
     model_type = getattr(args, "model_type", "standard")
     if model_type != "standard":
-        checkpoint_dir = os.path.join(ROOT_DIR, "checkpoints", model_type)
-        ckpt_prefix = f"{model_type}_c{condition}"
+        checkpoint_dir = os.path.join(ROOT_DIR, "checkpoints", ARCHITECTURE_FAMILY)
+        run_name = ARCHITECTURE_RUN_NAMES.get(model_type, f"{model_type}_12d")
+        if condition != 1:
+            run_name = f"{run_name}_c{condition}"
     else:
-        checkpoint_dir = meta["ckpt_dir"]
-        ckpt_prefix = meta["ckpt_prefix"]
+        checkpoint_dir = os.path.join(ROOT_DIR, "checkpoints", BASELINE_FAMILY)
+        run_name = meta["run_name"]
+    snapshot_dir = os.path.join(checkpoint_dir, "snapshots", run_name)
 
     if is_master:
-        os.makedirs(checkpoint_dir, exist_ok=True)
+        os.makedirs(snapshot_dir, exist_ok=True)
         print("=" * 75)
         print(f"TRAINING {meta["name"].upper()} [Model Type: {model_type}]")
         print(f"World Size: {world_size} | Device: {device} | Precision: FP16 AMP")
@@ -578,7 +591,7 @@ def train_condition(condition: int, args: Optional[argparse.Namespace] = None):
 
         if is_master and (total_tokens_seen - last_checkpoint_tokens) >= args.checkpoint_interval_tokens:
             last_checkpoint_tokens = total_tokens_seen
-            ckpt_path = os.path.join(checkpoint_dir, f"{ckpt_prefix}_{total_tokens_seen // 1_000_000}m.pt")
+            ckpt_path = os.path.join(snapshot_dir, f"tok{total_tokens_seen // 1_000_000:03d}M.pt")
             torch.save(
                 {
                     "step": step,
@@ -599,7 +612,7 @@ def train_condition(condition: int, args: Optional[argparse.Namespace] = None):
     total_time = time.time() - start_time
 
     if is_master:
-        final_ckpt = os.path.join(checkpoint_dir, f"{ckpt_prefix}_final.pt")
+        final_ckpt = os.path.join(checkpoint_dir, f"{run_name}.pt")
         ckpt_data = {
             "step": step,
             "tokens_seen": total_tokens_seen,

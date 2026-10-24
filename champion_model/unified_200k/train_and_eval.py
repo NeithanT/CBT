@@ -309,7 +309,7 @@ def main():
     parser.add_argument("--lr", type=float, default=1.5e-3, help="Peak learning rate")
     parser.add_argument("--threads", type=int, default=12, help="CPU threads")
     parser.add_argument("--log-interval", type=int, default=250, help="Log interval")
-    parser.add_argument("--save-ckpt", type=str, default="champion_model/unified_200k/checkpoints/unified_200k.pt", help="Checkpoint output path")
+    parser.add_argument("--save-ckpt", type=str, default="checkpoints/cbt/cbt_200k_unified_2d_rope_R3_k16.pt", help="Checkpoint output path")
     parser.add_argument("--eval-only", action="store_true", help="Run benchmark evaluations only")
     args = parser.parse_args()
 

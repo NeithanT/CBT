@@ -155,7 +155,7 @@ def run_tool_query(model: UnifiedGPT, tokenizer: UnifiedTokenizer, user_input: s
 
 def main():
     parser = argparse.ArgumentParser(description="Interactive CLI for Unified ~200k Model")
-    parser.add_argument("--ckpt", type=str, default="champion_model/unified_200k/checkpoints/unified_200k.pt")
+    parser.add_argument("--ckpt", type=str, default="checkpoints/cbt/cbt_200k_unified_2d_rope_R3_k16.pt")
     parser.add_argument("--config", type=str, default="champion_model/unified_200k/config_200k.json")
     parser.add_argument("--threads", type=int, default=12)
     args = parser.parse_args()

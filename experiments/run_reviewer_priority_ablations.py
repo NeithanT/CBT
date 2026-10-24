@@ -42,6 +42,15 @@ from experiments.run_equalized_15d_1024_and_large_sweep import (
 )
 
 
+CKPT_NAMES = {
+    "p_only_k32": "2d_rope_ponly_k32",
+    "2d_k0": "2d_rope_k0",
+    "2d_k16": "2d_rope_k16",
+    "2d_k64": "2d_rope_k64",
+    "1d_retrained": "1d_rope_k0_6000steps",
+}
+
+
 def forward_ablation(
     model: MathGPT,
     idx: torch.Tensor,
@@ -322,7 +331,7 @@ def fast_kv_generate_ablation(
 def main():
     torch.set_num_threads(16)
     tokenizer = MathTokenizer()
-    os.makedirs(os.path.join(ROOT_DIR, "checkpoints/reviewer_ablations"), exist_ok=True)
+    os.makedirs(os.path.join(ROOT_DIR, "checkpoints/ablations_100k_15d_1024"), exist_ok=True)
     os.makedirs(os.path.join(ROOT_DIR, "results"), exist_ok=True)
 
     print("=" * 90)
@@ -349,7 +358,7 @@ def main():
     trained_models = {}
 
     for exp_id, label, mode, pos_emb_type, k_shift, steps, lr in configs:
-        ckpt_path = os.path.join(ROOT_DIR, f"checkpoints/reviewer_ablations/{exp_id}.pt")
+        ckpt_path = os.path.join(ROOT_DIR, f"checkpoints/ablations_100k_15d_1024/{CKPT_NAMES[exp_id]}.pt")
         print("\n" + "-" * 90)
         print(f"EXPERIMENT: {label} ({steps} steps, lr={lr})")
         print("-" * 90, flush=True)
@@ -408,7 +417,7 @@ def main():
         )
 
     # 3. Add existing equalized 2D k=32 model for comparison
-    k32_ckpt = os.path.join(ROOT_DIR, "checkpoints/equalized_15d_1024/2d_shift32_15d_1024.pt")
+    k32_ckpt = os.path.join(ROOT_DIR, "checkpoints/ablations_100k_15d_1024/2d_rope_k32.pt")
     if os.path.exists(k32_ckpt):
         cfg_k32 = GPTConfig(
             vocab_size=tokenizer.vocab_size,

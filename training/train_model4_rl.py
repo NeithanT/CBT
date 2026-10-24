@@ -29,7 +29,9 @@ from src.distributed import (
 )
 from benchmarks.extrapolation import evaluate_extrapolation_char
 
-CHECKPOINT_DIR = os.path.join(ROOT_DIR, "checkpoints", "model_4")
+CHECKPOINT_DIR = os.path.join(ROOT_DIR, "checkpoints", "baselines_18m")
+RUN_NAME = "char_1d_rope_placevalue_grpo_12d"
+SNAPSHOT_DIR = os.path.join(CHECKPOINT_DIR, "snapshots", RUN_NAME)
 
 
 def compute_reward(prompt: str, expected_ans: str, full_gen: str) -> Tuple[float, bool, int]:
@@ -111,7 +113,7 @@ def train_model4_rl(args):
     device, rank, local_rank, world_size, is_master = init_distributed_mode(args)
 
     if is_master:
-        os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+        os.makedirs(SNAPSHOT_DIR, exist_ok=True)
         print("=" * 75)
         print("TRAINING MODEL 4: Place-Value Zero-Reduction Thinking with Reinforcement Learning")
         print(f"World Size: {world_size} | Device: {device} | Precision: FP16 AMP")
@@ -298,7 +300,7 @@ def train_model4_rl(args):
             )
 
         if is_master and rl_step % args.checkpoint_interval == 0:
-            ckpt_path = os.path.join(CHECKPOINT_DIR, f"model_4_rl_step_{rl_step}.pt")
+            ckpt_path = os.path.join(SNAPSHOT_DIR, f"grpo_step{rl_step}.pt")
             torch.save({
                 "step": rl_step,
                 "model_state": policy_model.state_dict(),
@@ -308,7 +310,7 @@ def train_model4_rl(args):
             print(f"[CHECKPOINT] Saved: {ckpt_path}")
 
     if is_master:
-        final_ckpt = os.path.join(CHECKPOINT_DIR, "model_4_final.pt")
+        final_ckpt = os.path.join(CHECKPOINT_DIR, f"{RUN_NAME}.pt")
         torch.save({
             "model_state": policy_model.state_dict(),
             "config": config,

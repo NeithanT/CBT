@@ -16,7 +16,7 @@ from src.tokenizer import MathTokenizer
 from src.model import MathGPT, GPTConfig
 from src.constants import get_device
 
-DEFAULT_CHECKPOINT = os.path.join(ROOT_DIR, "checkpoints", "baseline", "math_gpt_length_gen.pt")
+DEFAULT_CHECKPOINT = os.path.join(ROOT_DIR, "checkpoints", "toy_baselines", "v25_1d_rope_reversed_lengthgen.pt")
 
 
 def generate_length_dataset(

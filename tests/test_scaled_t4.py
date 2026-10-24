@@ -194,6 +194,38 @@ class TestExpandedDatasetAndLossMasking(unittest.TestCase):
         print("[PASS] test_prompt_and_result_loss_masking")
 
 
+class TestRope1DAblation(unittest.TestCase):
+    def setUp(self):
+        torch.manual_seed(0)
+        self.tokenizer = ScaledTokenizer()
+        cfg = ScaledGPTConfig(vocab_size=self.tokenizer.vocab_size, n_layer=2, n_recur=2, pos_emb_type="rope_1d")
+        self.model = ScaledGPT(cfg, tokenizer=self.tokenizer).eval()
+
+    def test_same_parameter_count_as_2d(self):
+        cfg_2d = ScaledGPTConfig(vocab_size=self.tokenizer.vocab_size, n_layer=2, n_recur=2)
+        self.assertEqual(self.model.get_num_params(), ScaledGPT(cfg_2d, tokenizer=self.tokenizer).get_num_params())
+        print("[PASS] test_same_parameter_count_as_2d")
+
+    def test_coords_and_uniform_shift_invariance(self):
+        idx = torch.tensor([self.tokenizer.encode("123+456=<THINK>", add_bos=True)], dtype=torch.long)
+        p, s = self.model.compute_coords(idx)
+        self.assertEqual(p[0].tolist(), list(range(idx.size(1))))
+        self.assertEqual(int(s.abs().sum()), 0)
+        with torch.no_grad():
+            base, _ = self.model(idx)
+            shifted, _ = self.model(idx, place_coords=p + 37, step_coords=s)
+        self.assertTrue(torch.allclose(base, shifted, atol=1e-4))
+        print("[PASS] test_coords_and_uniform_shift_invariance")
+
+    def test_kv_cached_decoder_matches_generate(self):
+        from benchmarks.evaluate_random_16_to_100d import fast_generate_batch
+        idx = torch.tensor([self.tokenizer.encode("12+34=", add_bos=True)], dtype=torch.long)
+        ref = self.model.generate(idx, max_new_tokens=12, temperature=0.0)
+        fast = fast_generate_batch(self.model, idx, max_new_tokens=12, eos_id=-1)
+        self.assertEqual(fast[0, :ref.size(1)].tolist(), ref[0].tolist())
+        print("[PASS] test_kv_cached_decoder_matches_generate")
+
+
 class TestCurriculumV5(unittest.TestCase):
     def setUp(self):
         from champion_model.scaled_t4.sft_search import build_benchmark_holdout, CurriculumV5Stream

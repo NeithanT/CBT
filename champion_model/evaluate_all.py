@@ -27,9 +27,7 @@ def run_math_eval(device: torch.device) -> bool:
     print("RUNNING CHAMPION ARITHMETIC BENCHMARK (1-20 DIGITS EXTRAPOLATION)")
     print("=" * 75)
 
-    ckpt_path = os.path.join(ROOT_DIR, "champion_model/math_model/checkpoints/dense_100k_2d_rec3_full.pt")
-    if not os.path.exists(ckpt_path):
-        ckpt_path = os.path.join(ROOT_DIR, "dense_model/checkpoints/dense_100k_2d_rec3_full.pt")
+    ckpt_path = os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_100k_math_2d_rope_R3_k16_64ep.pt")
 
     tok = MathTokenizer()
     if os.path.exists(ckpt_path):
@@ -68,9 +66,7 @@ def run_tools_eval(device: torch.device) -> bool:
     print("RUNNING CHAMPION TOOLGPT BENCHMARK (50 STRUCTURED TOOL ROUTING CASES)")
     print("=" * 75)
 
-    ckpt_path = os.path.join(ROOT_DIR, "champion_model/tool_model/checkpoints/tool_gpt_100k.pt")
-    if not os.path.exists(ckpt_path):
-        ckpt_path = os.path.join(ROOT_DIR, "tool_model/checkpoints/tool_gpt_100k.pt")
+    ckpt_path = os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_100k_tool_2d_rope_R3_k8.pt")
 
     tok = ToolTokenizer()
     if os.path.exists(ckpt_path):

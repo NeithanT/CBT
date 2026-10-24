@@ -242,11 +242,9 @@ def main():
             suffix += "_bpe4k"
         if args.pos_emb_type == "learned_2d":
             suffix += "_learned"
-        candidate_champ = f"champion_model/tool_model/checkpoints/tool_gpt_100k{suffix}.pt"
-        if os.path.exists(os.path.join(ROOT_DIR, candidate_champ)):
-            args.save_ckpt = candidate_champ
-        else:
-            args.save_ckpt = f"tool_model/checkpoints/tool_gpt_100k{suffix}.pt"
+        tok_name = "bpe4k" if args.tokenizer_type == "bpe_4k" else "cbt"
+        pos_name = "learned_2d" if args.pos_emb_type == "learned_2d" else "2d_rope"
+        args.save_ckpt = f"checkpoints/cbt/{tok_name}_100k_tool_{pos_name}_R3_k8.pt"
 
     if torch.cuda.is_available():
         device = torch.device("cuda:0")

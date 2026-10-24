@@ -8,8 +8,9 @@ Architecture:
 - Recurrent passes R = 3 (Effective depth = 18 layers at zero parameter overhead)
 - Residual recurrence update: x = x + (1/sqrt(R)) * (x_res - x)
 - Tied embedding and output projection weights (wte.weight == lm_head.weight)
-- Decoupled 2D-RoPE (Macro place p, Micro step tau)
-- Selective shift masking: (place_coords > 0).long()
+- Decoupled 2D-RoPE (Macro place p, Micro step tau); pos_emb_type="rope_1d" gives the
+  standard 1D-RoPE ablation (positions 0..T-1 over the full head_dim, same parameters)
+- Selective shift masking: (place_coords > 0).long() (2D only)
 - O(1) SDPA causal attention
 - Non-embedding params: ~18,887,680 | Total params: ~18,953,216 (~18.95M target)
 """
@@ -106,6 +107,19 @@ def apply_2d_rope(
     return torch.cat([rot_place, rot_step], dim=-1)
 
 
+def apply_1d_rope(x: torch.Tensor, pos: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
+    """Applies standard 1D-RoPE over the full head_dim of [B, n_head, T, head_dim] at positions pos [B, T]."""
+    pos = torch.clamp(pos, 0, cos.size(0) - 1)
+    c = cos[pos].unsqueeze(1).to(dtype=x.dtype, device=x.device)
+    s = sin[pos].unsqueeze(1).to(dtype=x.dtype, device=x.device)
+    x_even = x[..., 0::2]
+    x_odd = x[..., 1::2]
+    out = torch.empty_like(x)
+    out[..., 0::2] = x_even * c - x_odd * s
+    out[..., 1::2] = x_even * s + x_odd * c
+    return out
+
+
 class CausalSelfAttention(nn.Module):
     """Causal multi-head self-attention with SDPA and 2D-RoPE."""
 
@@ -117,16 +131,25 @@ class CausalSelfAttention(nn.Module):
         self.head_dim = config.n_embd // config.n_head
         self.dropout = config.dropout
         self.rope_theta = config.rope_theta
+        self.pos_emb_type = config.pos_emb_type
+        # 1D rotates head_dim/2 pairs; 2D rotates head_dim/4 pairs per subspace
+        self.rope_dim = 2 * self.head_dim if self.pos_emb_type == "rope_1d" else self.head_dim
 
         self.c_attn = nn.Linear(config.n_embd, 3 * config.n_embd, bias=config.bias)
         self.c_proj = nn.Linear(config.n_embd, config.n_embd, bias=config.bias)
         self.resid_dropout = nn.Dropout(config.dropout)
 
         cos, sin = precompute_2d_rope_freqs(
-            self.head_dim, max_coords=config.max_coords, theta_base=config.rope_theta
+            self.rope_dim, max_coords=config.max_coords, theta_base=config.rope_theta
         )
         self.register_buffer("rope_cos", cos, persistent=False)
         self.register_buffer("rope_sin", sin, persistent=False)
+
+    def rotate(self, x: torch.Tensor, place_coords: torch.Tensor, step_coords: torch.Tensor) -> torch.Tensor:
+        """Applies the configured RoPE variant (step_coords is ignored for rope_1d)."""
+        if self.pos_emb_type == "rope_1d":
+            return apply_1d_rope(x, place_coords, self.rope_cos, self.rope_sin)
+        return apply_2d_rope(x, place_coords, step_coords, self.rope_cos, self.rope_sin)
 
     def forward(
         self,
@@ -146,12 +169,12 @@ class CausalSelfAttention(nn.Module):
         max_coord = max(int(place_coords.max().item()), int(step_coords.max().item())) + 1
         if max_coord > self.rope_cos.size(0):
             new_max = max(max_coord * 2, 4096)
-            cos, sin = precompute_2d_rope_freqs(self.head_dim, max_coords=new_max, theta_base=self.rope_theta)
+            cos, sin = precompute_2d_rope_freqs(self.rope_dim, max_coords=new_max, theta_base=self.rope_theta)
             self.rope_cos = cos.to(x.device)
             self.rope_sin = sin.to(x.device)
 
-        q = apply_2d_rope(q, place_coords, step_coords, self.rope_cos, self.rope_sin)
-        k = apply_2d_rope(k, place_coords, step_coords, self.rope_cos, self.rope_sin)
+        q = self.rotate(q, place_coords, step_coords)
+        k = self.rotate(k, place_coords, step_coords)
 
         dropout_p = self.dropout if self.training else 0.0
         y = F.scaled_dot_product_attention(
@@ -202,6 +225,7 @@ class ScaledGPT(nn.Module):
 
     def __init__(self, config: ScaledGPTConfig, tokenizer: Optional[ScaledTokenizer] = None):
         super().__init__()
+        assert config.pos_emb_type in ("rope_2d", "rope_1d"), f"Unsupported pos_emb_type: {config.pos_emb_type}"
         self.config = config
         self.tokenizer = tokenizer or ScaledTokenizer()
 
@@ -236,6 +260,14 @@ class ScaledGPT(nn.Module):
         if non_embedding:
             n_params -= self.transformer.wte.weight.numel()
         return n_params
+
+    def compute_coords(self, idx: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Returns (place, step) coordinates: 2D mapper for rope_2d, (0..T-1, zeros) for rope_1d."""
+        if self.config.pos_emb_type == "rope_1d":
+            B, T = idx.size()
+            pos = torch.arange(T, dtype=torch.long, device=idx.device).unsqueeze(0).expand(B, T)
+            return pos, torch.zeros_like(pos)
+        return self.compute_2d_coords(idx)
 
     def compute_2d_coords(self, idx: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -360,11 +392,12 @@ class ScaledGPT(nn.Module):
         device = idx.device
 
         if place_coords is None or step_coords is None:
-            place_coords, step_coords = self.compute_2d_coords(idx)
+            place_coords, step_coords = self.compute_coords(idx)
 
         # Shift invariance data augmentation during training:
-        # Strictly applies selective shift masking (place_coords > 0).long()
-        if self.training and self.config.k_rand_shift > 0:
+        # Strictly applies selective shift masking (place_coords > 0).long().
+        # Skipped for rope_1d: a uniform offset leaves every relative distance, hence every RoPE score, unchanged.
+        if self.training and self.config.k_rand_shift > 0 and self.config.pos_emb_type == "rope_2d":
             shifts = torch.randint(0, self.config.k_rand_shift + 1, (B, 1), device=device)
             shift_mask = (place_coords > 0).long()
             place_coords = place_coords + shifts * shift_mask

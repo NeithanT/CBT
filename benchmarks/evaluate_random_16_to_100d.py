@@ -1,6 +1,6 @@
 """
 Expanded Random & Multi-Carry Arithmetic Extrapolation Benchmark (16 to 100 Digits).
-Evaluates CBT-18.95M (`champion_final.pt`) using KV-cached batched greedy decoding
+Evaluates CBT-18.95M (`checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt`) using KV-cached batched greedy decoding
 across unseen digit lengths from 16 to 100 digits, logging per-length accuracy,
 internal scratchpad accuracy, 95% Wilson confidence intervals, and failure modes.
 """
@@ -18,7 +18,7 @@ import torch.nn.functional as F
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from champion_model.scaled_t4.model import ScaledGPT, ScaledGPTConfig, apply_2d_rope
+from champion_model.scaled_t4.model import ScaledGPT, ScaledGPTConfig
 from champion_model.scaled_t4.tokenizer import ScaledTokenizer
 
 
@@ -52,7 +52,8 @@ def fast_generate_batch(
     k_cache: List[Any] = [None] * total_layers
     v_cache: List[Any] = [None] * total_layers
 
-    p_coords, s_coords = model.compute_2d_coords(idx)
+    p_coords, s_coords = model.compute_coords(idx)
+    is_1d = model.config.pos_emb_type == "rope_1d"
     x = model.transformer.wte(idx)
     layer_idx = 0
     for _ in range(n_recur):
@@ -64,8 +65,8 @@ def fast_generate_batch(
             q = q.view(B, -1, attn.n_head, attn.head_dim).transpose(1, 2)
             k = k.view(B, -1, attn.n_head, attn.head_dim).transpose(1, 2)
             v = v.view(B, -1, attn.n_head, attn.head_dim).transpose(1, 2)
-            q = apply_2d_rope(q, p_coords, s_coords, attn.rope_cos, attn.rope_sin)
-            k = apply_2d_rope(k, p_coords, s_coords, attn.rope_cos, attn.rope_sin)
+            q = attn.rotate(q, p_coords, s_coords)
+            k = attn.rotate(k, p_coords, s_coords)
             k_cache[layer_idx] = k
             v_cache[layer_idx] = v
             y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
@@ -123,6 +124,9 @@ def fast_generate_batch(
                         s_step[b, 0] = 0
                         ans_d_idx[b] += 1
 
+        if is_1d:
+            p_step = torch.full((B, 1), idx.size(1) - 1, dtype=torch.long)
+            s_step = torch.zeros((B, 1), dtype=torch.long)
         x = model.transformer.wte(idx[:, -1:])
         layer_idx = 0
         for _ in range(n_recur):
@@ -134,8 +138,8 @@ def fast_generate_batch(
                 q = q.view(B, 1, attn.n_head, attn.head_dim).transpose(1, 2)
                 k = k.view(B, 1, attn.n_head, attn.head_dim).transpose(1, 2)
                 v = v.view(B, 1, attn.n_head, attn.head_dim).transpose(1, 2)
-                q = apply_2d_rope(q, p_step, s_step, attn.rope_cos, attn.rope_sin)
-                k = apply_2d_rope(k, p_step, s_step, attn.rope_cos, attn.rope_sin)
+                q = attn.rotate(q, p_step, s_step)
+                k = attn.rotate(k, p_step, s_step)
                 k_cache[layer_idx] = torch.cat([k_cache[layer_idx], k], dim=2)
                 v_cache[layer_idx] = torch.cat([v_cache[layer_idx], v], dim=2)
                 y = F.scaled_dot_product_attention(q, k_cache[layer_idx], v_cache[layer_idx], is_causal=False)
@@ -206,11 +210,15 @@ def sample_problems_for_length(d: int, n_samples: int, rng: random.Random) -> Li
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate CBT Arithmetic Extrapolation")
-    parser.add_argument("--ckpt", type=str, default="champion_model/scaled_t4/checkpoints/champion_final.pt")
+    parser.add_argument("--ckpt", type=str, default="checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt")
     parser.add_argument("--samples", type=int, default=None, help="Override sample count per length")
     parser.add_argument("--max-digits", type=int, default=100, help="Maximum digit length to evaluate")
     parser.add_argument("--out-json", type=str, default="results/random_extrapolation_16_to_100d.json")
+    parser.add_argument("--lengths", type=str, default=None, help="Comma-separated digit lengths (overrides the 16-100d grid)")
+    parser.add_argument("--threads", type=int, default=None, help="CPU threads")
     args = parser.parse_args()
+    if args.threads:
+        torch.set_num_threads(args.threads)
 
     tok = ScaledTokenizer()
     ckpt = torch.load(
@@ -239,6 +247,8 @@ def main() -> None:
 
     all_lengths = [16, 20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 80, 100]
     lengths = [d for d in all_lengths if d <= args.max_digits]
+    if args.lengths:
+        lengths = [int(x) for x in args.lengths.split(",")]
     samples_per_len = {
         16: 30,
         20: 30,
@@ -254,8 +264,8 @@ def main() -> None:
         80: 10,
         100: 10,
     }
-    if args.samples is not None:
-        samples_per_len = {d: args.samples for d in lengths}
+    if args.samples is not None or args.lengths:
+        samples_per_len = {d: args.samples or samples_per_len.get(d, 30) for d in lengths}
 
     rng = random.Random(20261021)
     all_results: Dict[str, Any] = {"per_length": {}, "failures": []}

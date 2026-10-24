@@ -169,13 +169,22 @@ def evaluate_model(
     }
 
 
+CKPT_NAMES = {
+    "model_1d_dense": "1d_rope_R1_k0",
+    "model_1d_rec3": "1d_rope_R3_k0",
+    "model_2d_dense": "2d_rope_R1_k0",
+    "model_2d_rec3": "2d_rope_R3_k0",
+    "model_2d_rec3_shift16": "2d_rope_R3_k16",
+}
+
+
 def run_factor_ablation_suite(
     steps: int = 1500,
     batch_size: int = 16,
     lr: float = 1.2e-3,
     n_samples: int = 2500,
     threads: int = 12,
-    save_dir: str = "checkpoints/ablations_100k",
+    save_dir: str = "checkpoints/ablations_100k/short_1500steps",
     results_dir: str = "results",
 ) -> List[Dict[str, Any]]:
     """Executes the full factor ablation matrix for ~100k parameter models."""
@@ -272,7 +281,7 @@ def run_factor_ablation_suite(
         )
 
         final_loss = loss_hist[-1]
-        ckpt_filename = f"{config_meta['id']}.pt"
+        ckpt_filename = f"{CKPT_NAMES[config_meta['id']]}.pt"
         ckpt_path = os.path.join(ROOT_DIR, save_dir, ckpt_filename)
         torch.save(
             {
@@ -343,7 +352,7 @@ def main():
     parser.add_argument("--lr", type=float, default=1.2e-3, help="Learning rate (default: 1.2e-3)")
     parser.add_argument("--n-samples", type=int, default=5000, help="Curriculum sample pool (default: 5000)")
     parser.add_argument("--threads", type=int, default=12, help="CPU threads to use (default: 12)")
-    parser.add_argument("--save-dir", type=str, default="checkpoints/ablations_100k", help="Directory to save checkpoints")
+    parser.add_argument("--save-dir", type=str, default="checkpoints/ablations_100k/short_1500steps", help="Directory to save checkpoints (the 2,000-step paper run lives in checkpoints/ablations_100k)")
     parser.add_argument("--results-dir", type=str, default="results", help="Directory to save results")
     args = parser.parse_args()
 

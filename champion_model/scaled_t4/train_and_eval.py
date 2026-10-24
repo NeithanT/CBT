@@ -303,7 +303,8 @@ def train_scaled_t4(
                 print(f"[WARN] Reached maximum allocated time limit ({max_hours:.1f}h). Halting training gracefully.")
                 if ckpt_path is not None:
                     raw_model = model.module if hasattr(model, "module") else model
-                    timeout_ckpt = ckpt_path.replace(".pt", f"_timeout_step_{step}.pt")
+                    # Step `step` has not run yet; record the last completed step so resume starts here
+                    timeout_ckpt = ckpt_path.replace(".pt", f"_timeout_step_{step - 1}.pt")
                     os.makedirs(os.path.dirname(timeout_ckpt), exist_ok=True)
                     torch.save({
                         "model_state_dict": raw_model.state_dict(),
@@ -311,7 +312,7 @@ def train_scaled_t4(
                         "scheduler_state_dict": scheduler.state_dict(),
                         "scaler_state_dict": scaler.state_dict() if use_cuda_amp else None,
                         "config": raw_model.config,
-                        "step": step,
+                        "step": step - 1,
                         "total_tokens": total_tokens_processed,
                     }, timeout_ckpt)
                     sync_checkpoint_to_kaggle(timeout_ckpt)
@@ -611,9 +612,10 @@ def main():
     parser.add_argument("--log-interval", type=int, default=250, help="Log step interval")
     parser.add_argument("--save-interval", type=int, default=2500, help="Checkpoint save step interval")
     parser.add_argument("--max-keep-ckpts", type=int, default=2, help="Maximum number of intermediate checkpoints to retain (default: 2)")
-    parser.add_argument("--save-ckpt", type=str, default="champion_model/scaled_t4/checkpoints/scaled_t4_final.pt", help="Checkpoint path")
+    parser.add_argument("--save-ckpt", type=str, default="checkpoints/cbt/cbt_18m_2d_rope_R3_k32_pretrain.pt", help="Checkpoint path")
     parser.add_argument("--resume", type=str, default=None, help="Resume from checkpoint path")
     parser.add_argument("--eval-only", action="store_true", help="Run benchmark evaluation only")
+    parser.add_argument("--pos-emb", type=str, default="rope_2d", choices=["rope_2d", "rope_1d"], help="Position encoding (rope_1d = 1D-RoPE ablation)")
     args = parser.parse_args()
 
     device, rank, local_rank, world_size, is_master = init_distributed()
@@ -628,6 +630,7 @@ def main():
         n_recur=3,
         max_coords=4096,
         k_rand_shift=32,
+        pos_emb_type=args.pos_emb,
     )
     model = ScaledGPT(config, tokenizer=tokenizer).to(device)
 
@@ -636,7 +639,7 @@ def main():
 
     if is_master:
         print("\n" + "=" * 80, flush=True)
-        print("SCALED RECURRENT 2D-ROPE TRANSFORMER (~18.95M PARAMETERS)", flush=True)
+        print(f"SCALED RECURRENT TRANSFORMER (~18.95M PARAMETERS) | Position encoding: {config.pos_emb_type}", flush=True)
         print(f"Device: {device} | World Size: {world_size} | Rank: {rank}", flush=True)
         print(f"Total Parameters:          {total_params:,} ({total_params/1e6:.2f}M)", flush=True)
         print(f"Non-Embedding Parameters:  {non_emb_params:,} ({non_emb_params/1e6:.2f}M)", flush=True)
@@ -651,6 +654,9 @@ def main():
     resume_state = None
     if args.resume and os.path.exists(args.resume):
         resume_state = torch.load(args.resume, map_location=device, weights_only=False)
+        ckpt_pos = getattr(resume_state.get("config"), "pos_emb_type", "rope_2d")
+        if ckpt_pos != config.pos_emb_type:
+            raise ValueError(f"--pos-emb {config.pos_emb_type} does not match checkpoint pos_emb_type {ckpt_pos}")
         model.load_state_dict(resume_state["model_state_dict"])
         start_step = resume_state.get("step", 0) + 1
         if is_master:
@@ -696,6 +702,13 @@ def main():
             resume_state=resume_state,
         )
 
+        # A time-limited session stops early; its _timeout_step_N.pt is the resume point, not a final model
+        completed = start_step + len(loss_hist) - 1 >= args.steps
+        if is_master and not completed:
+            print(f"[WARN] Stopped at step {start_step + len(loss_hist) - 1:,}/{args.steps:,} (time limit). "
+                  f"No final checkpoint written; resume with --resume <_timeout_step_N.pt>.", flush=True)
+            cleanup_distributed()
+            return
         if is_master:
             elapsed_total = time.time() - t0
             print(f"\n[INFO] Training complete in {elapsed_total / 3600.0:.2f} hours. Final Loss: {loss_hist[-1] if loss_hist else 0.0:.4f}")

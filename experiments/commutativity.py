@@ -16,7 +16,7 @@ from src.model import MathGPT, GPTConfig
 from src.constants import get_device
 from src.dataset import generate_commutativity_dataset, MathDataset
 
-DEFAULT_CHECKPOINT = os.path.join(ROOT_DIR, "checkpoints", "baseline", "math_gpt_commutative.pt")
+DEFAULT_CHECKPOINT = os.path.join(ROOT_DIR, "checkpoints", "toy_baselines", "v25_abspos_4l128d_commutative.pt")
 
 
 def evaluate_dataset_split(

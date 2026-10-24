@@ -30,13 +30,13 @@ print_header() {
 # Determine base directory structure (root vs inside scaled_t4)
 if [ -f "sft_search.py" ]; then
     BASE_DIR="."
-    DEFAULT_CKPT_DIR="checkpoints"
+    DEFAULT_CKPT_DIR="../../checkpoints/cbt"
 elif [ -f "champion_model/scaled_t4/sft_search.py" ]; then
     BASE_DIR="champion_model/scaled_t4"
-    DEFAULT_CKPT_DIR="champion_model/scaled_t4/checkpoints"
+    DEFAULT_CKPT_DIR="checkpoints/cbt"
 else
     BASE_DIR="."
-    DEFAULT_CKPT_DIR="checkpoints"
+    DEFAULT_CKPT_DIR="checkpoints/cbt"
 fi
 
 # Resolve checkpoint path from argument $1 or search common paths
@@ -48,20 +48,12 @@ if [ -n "$CKPT_INPUT" ] && [ -f "$CKPT_INPUT" ]; then
 else
     CANDIDATES=(
         "$CKPT_INPUT"
-        "archive/checkpoints/champion_base.pt"
-        "archive/checkpoints/champion_base.pt"
-        "$DEFAULT_CKPT_DIR/scaled_t4_sft_all_tools.pt"
-        "$DEFAULT_CKPT_DIR/scaled_t4_sft_search.pt"
-        "checkpoints/scaled_t4_sft_search.pt"
-        "champion_model/checkpoints/scaled_t4_sft_search_step_7000.zip"
-        "/kaggle/working/checkpoints/scaled_t4/scaled_t4_sft_search.pt"
-        "$DEFAULT_CKPT_DIR/scaled_t4_final.pt"
-        "checkpoints/scaled_t4_final.pt"
+        "$DEFAULT_CKPT_DIR/cbt_18m_2d_rope_R3_k32_base.pt"
+        "/kaggle/working/checkpoints/scaled_t4/champion_base.pt"
+        "$DEFAULT_CKPT_DIR/cbt_18m_2d_rope_R3_k32_pretrain.pt"
         "/kaggle/working/checkpoints/scaled_t4/scaled_t4_final.pt"
-        "$DEFAULT_CKPT_DIR/scaled_t4_final_timeout_step_45059.pt"
+        "$DEFAULT_CKPT_DIR/snapshots/pretrain/step45059_resume.pt"
         "/kaggle/working/checkpoints/scaled_t4/scaled_t4_final_timeout_step_45059.pt"
-        "champion_model/checkpoints/scaled_t4_final.zip"
-        "champion_model/checkpoints/scaled_t4_final_timeout_step_45059.zip"
     )
     for c in "${CANDIDATES[@]}"; do
         if [ -n "$c" ] && [ -f "$c" ]; then
@@ -84,23 +76,23 @@ show_help() {
     echo "  MODE             Operation mode: 'sft', 'pretrain', 'eval', 'demo' (Default: sft)"
     echo ""
     echo "Examples:"
-    echo "  # 1. Run Universal Robust Annealing SFT from champion_base.pt (Default: 12000 steps)"
-    echo "  ./train.sh archive/checkpoints/champion_base.pt"
+    echo "  # 1. Run Universal Robust Annealing SFT from the pre-SFT base (Default: 12000 steps)"
+    echo "  ./train.sh checkpoints/cbt/cbt_18m_2d_rope_R3_k32_base.pt"
     echo ""
     echo "  # 2. Run All-Tools Annealing SFT with custom steps"
-    echo "  ./train.sh archive/checkpoints/champion_base.pt 12000 sft"
+    echo "  ./train.sh checkpoints/cbt/cbt_18m_2d_rope_R3_k32_base.pt 12000 sft"
     echo ""
-    echo "  # 2b. Curriculum V5 SFT from champion_final.pt -> champion_v3_final.pt (6.0 h SFT inside a 7 h session)"
-    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_final.pt 200000 sft_v3"
+    echo "  # 2b. Curriculum V5 SFT from the champion -> cbt_18m_2d_rope_R3_k45_sftv5.pt (6.0 h SFT inside a 7 h session)"
+    echo "  ./train.sh $DEFAULT_CKPT_DIR/cbt_18m_2d_rope_R3_k45_sftv4.pt 200000 sft_v3"
     echo ""
     echo "  # 3. Resume full 10-hour pretraining (e.g., Session 2 up to 100k steps)"
     echo "  ./train.sh /kaggle/working/checkpoints/scaled_t4/scaled_t4_final_timeout_step_45059.pt 100000 pretrain"
     echo ""
     echo "  # 4. Run evaluation benchmark on checkpoint"
-    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_final.pt 0 eval"
+    echo "  ./train.sh $DEFAULT_CKPT_DIR/cbt_18m_2d_rope_R3_k45_sftv4.pt 0 eval"
     echo ""
     echo "  # 5. Launch interactive terminal"
-    echo "  ./train.sh $DEFAULT_CKPT_DIR/champion_final.pt 0 demo"
+    echo "  ./train.sh $DEFAULT_CKPT_DIR/cbt_18m_2d_rope_R3_k45_sftv4.pt 0 demo"
     echo "================================================================================"
 }
 
@@ -121,7 +113,7 @@ case "$MODE" in
     sft)
         echo "[INFO] Mode: Universal Robust All-Tools & Search Annealing SFT ($STEPS steps)"
         echo "[INFO] Curriculum V4: 45% Multi-Tool + 35% Search Copy + 20% Math Replay (1-25 Digits, k=45)"
-        SAVE_CKPT="$DEFAULT_CKPT_DIR/champion_final.pt"
+        SAVE_CKPT="$DEFAULT_CKPT_DIR/cbt_18m_2d_rope_R3_k45_sftv4.pt"
         
         EXTRA_ARGS=()
         if [ -n "$RESOLVED_CKPT" ]; then
@@ -144,7 +136,7 @@ case "$MODE" in
         echo "[INFO] Mode: Curriculum V5 SFT -> champion_v3 (<= $STEPS steps, 6.0 h wall clock)"
         V3_BASE="${RESOLVED_CKPT}"
         if [ -z "$CKPT_INPUT" ] || [ ! -f "$CKPT_INPUT" ]; then
-            V3_BASE="$DEFAULT_CKPT_DIR/champion_final.pt"
+            V3_BASE="$DEFAULT_CKPT_DIR/cbt_18m_2d_rope_R3_k45_sftv4.pt"
         fi
         "$PY_BIN" "$BASE_DIR/sft_search.py" \
             --curriculum v5 \
@@ -156,14 +148,14 @@ case "$MODE" in
             --max-hours 6.0 \
             --save-interval 2000 \
             --probe-interval 2000 \
-            --save-ckpt "$DEFAULT_CKPT_DIR/champion_v3_final.pt" \
+            --save-ckpt "$DEFAULT_CKPT_DIR/cbt_18m_2d_rope_R3_k45_sftv5.pt" \
             --max-keep-ckpts 2 \
             "${@:4}"
         ;;
 
     pretrain|continue)
         echo "[INFO] Mode: Frontier Pretraining / Extension ($STEPS steps)"
-        SAVE_CKPT="$DEFAULT_CKPT_DIR/scaled_t4_final.pt"
+        SAVE_CKPT="$DEFAULT_CKPT_DIR/cbt_18m_2d_rope_R3_k32_pretrain.pt"
         
         EXTRA_ARGS=()
         if [ -n "$RESOLVED_CKPT" ]; then

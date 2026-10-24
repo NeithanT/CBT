@@ -53,7 +53,7 @@ champion_model/
 ## 3. Verified Benchmark Results
 
 ### 3.1 Arithmetic Length Extrapolation (1 to 20 Digits)
-Evaluated on `dense_100k_2d_rec3_full.pt`:
+Evaluated on `checkpoints/cbt/cbt_100k_math_2d_rope_R3_k16_64ep.pt`:
 
 | Tier | Test Cases | Result | Status |
 | :--- | :---: | :---: | :---: |
@@ -64,7 +64,7 @@ Evaluated on `dense_100k_2d_rec3_full.pt`:
 | **Total Benchmark** | **14** | **14/14 (100.0%)** | `[FLAWLESS]` |
 
 ### 3.2 ToolGPT Tool Routing (50 Test Cases)
-Evaluated on `tool_gpt_100k.pt`:
+Evaluated on `checkpoints/cbt/cbt_100k_tool_2d_rope_R3_k8.pt`:
 
 | Tool Category | Evaluated Cases | Accuracy | Status |
 | :--- | :---: | :---: | :---: |
@@ -95,7 +95,7 @@ Or directly via the arithmetic runner:
   --pos-emb-type rope_2d \
   --n-recur 3 \
   --eval-only \
-  --save-ckpt champion_model/math_model/checkpoints/dense_100k_2d_rec3_full.pt
+  --save-ckpt checkpoints/cbt/cbt_100k_math_2d_rope_R3_k16_64ep.pt
 ```
 
 ### 4.3 Run Only Tool Calling Evaluation
@@ -106,7 +106,7 @@ Or directly via the tool runner:
 ```bash
 .venv/bin/python champion_model/tool_model/train_and_eval.py \
   --eval-only \
-  --save-ckpt champion_model/tool_model/checkpoints/tool_gpt_100k.pt
+  --save-ckpt checkpoints/cbt/cbt_100k_tool_2d_rope_R3_k8.pt
 ```
 
 ---
@@ -118,14 +118,14 @@ import torch
 from champion_model import MathGPT, ToolGPT, ToolTokenizer
 
 # 1. Load Math Champion
-math_ckpt = torch.load("champion_model/math_model/checkpoints/dense_100k_2d_rec3_full.pt", map_location="cpu", weights_only=False)
+math_ckpt = torch.load("checkpoints/cbt/cbt_100k_math_2d_rope_R3_k16_64ep.pt", map_location="cpu", weights_only=False)
 math_model = MathGPT(math_ckpt["config"])
 math_model.load_state_dict(math_ckpt["model_state_dict"])
 math_model.eval()
 
 # 2. Load Tool Champion
 tool_tok = ToolTokenizer()
-tool_ckpt = torch.load("champion_model/tool_model/checkpoints/tool_gpt_100k.pt", map_location="cpu", weights_only=False)
+tool_ckpt = torch.load("checkpoints/cbt/cbt_100k_tool_2d_rope_R3_k8.pt", map_location="cpu", weights_only=False)
 tool_model = ToolGPT(tool_ckpt["config"], tokenizer=tool_tok)
 tool_model.load_state_dict(tool_ckpt["model_state_dict"])
 tool_model.eval()

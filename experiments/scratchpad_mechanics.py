@@ -17,7 +17,7 @@ from src.model import MathGPT, GPTConfig
 from src.constants import get_device
 from src.arithmetic import format_addition_char_scratchpad, extract_scratchpad_answer
 
-DEFAULT_CHECKPOINT = os.path.join(ROOT_DIR, "checkpoints", "baseline", "math_gpt_scratchpad.pt")
+DEFAULT_CHECKPOINT = os.path.join(ROOT_DIR, "checkpoints", "toy_baselines", "v25_1d_rope_scratchpad.pt")
 
 
 def generate_gap_dataset(

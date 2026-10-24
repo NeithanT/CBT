@@ -242,7 +242,7 @@ def run_dialogue_prompt(model: ScaledGPT, tokenizer: ScaledTokenizer, user_input
 
 def main():
     parser = argparse.ArgumentParser(description="ScaledGPT Interactive CLI")
-    parser.add_argument("--ckpt", type=str, default="champion_model/scaled_t4/checkpoints/champion_final.pt", help="Path to checkpoint")
+    parser.add_argument("--ckpt", type=str, default="checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt", help="Path to checkpoint")
     parser.add_argument("--prompt", type=str, default=None, help="Execute a single prompt and exit")
     parser.add_argument("--threads", type=int, default=8, help="Number of CPU threads for inference")
     args = parser.parse_args()
@@ -258,15 +258,10 @@ def main():
     candidates = [
         args.ckpt,
         os.path.join(ROOT_DIR, args.ckpt),
-        os.path.join(ROOT_DIR, "champion_model/scaled_t4/checkpoints/champion_final.pt"),
-        os.path.join(ROOT_DIR, "champion_model/checkpoints/champion_final.pt"),
-        os.path.join(ROOT_DIR, "champion_model/scaled_t4/checkpoints/scaled_t4_sft_all_tools.pt"),
-        os.path.join(ROOT_DIR, "champion_model/scaled_t4/checkpoints/scaled_t4_sft_search.pt"),
-        os.path.join(ROOT_DIR, "champion_model/scaled_t4/checkpoints/scaled_t4_final.pt"),
-        os.path.join(ROOT_DIR, "champion_model/scaled_t4/checkpoints/scaled_t4_final_timeout_step_45059.pt"),
-        os.path.join(ROOT_DIR, "champion_model/checkpoints/scaled_t4_sft_search_step_7000.zip"),
-        os.path.join(ROOT_DIR, "champion_model/checkpoints/scaled_t4_final.zip"),
-        os.path.join(ROOT_DIR, "champion_model/checkpoints/scaled_t4_final_timeout_step_45059.zip"),
+        os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt"),
+        os.path.join(ROOT_DIR, "champion_final.pt"),
+        os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k32_base.pt"),
+        os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k32_pretrain.pt"),
     ]
     resolved_path = None
     for p in candidates:
@@ -278,8 +273,11 @@ def main():
         try:
             from huggingface_hub import hf_hub_download
             print("[INFO] Local weights not found. Automatically pulling champion weights from Hugging Face (Neithanvarvas/CBT)...")
-            target_dir = os.path.join(ROOT_DIR, "champion_model", "scaled_t4", "checkpoints")
+            target_dir = os.path.join(ROOT_DIR, "checkpoints", "cbt")
             resolved_path = hf_hub_download(repo_id="Neithanvarvas/CBT", filename="champion_final.pt", local_dir=target_dir)
+            local_path = os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt")
+            os.replace(resolved_path, local_path)
+            resolved_path = local_path
             print(f"[PASS] Successfully pulled weights to: {resolved_path}")
         except Exception as e:
             print(f"[WARN] Automatic Hugging Face pull unsuccessful ({e}).")

@@ -15,7 +15,7 @@ from src.tokenizer import MathTokenizer
 from src.dataset import create_dataloaders
 from src.constants import TRAINING_CONSTANTS, MODEL_CONSTANTS, get_device
 
-DEFAULT_SAVE_PATH = os.path.join(ROOT_DIR, "checkpoints", "baseline", "math_gpt.pt")
+DEFAULT_SAVE_PATH = os.path.join(ROOT_DIR, "checkpoints", "toy_baselines", "v25_abspos_3l96d.pt")
 
 
 def train(

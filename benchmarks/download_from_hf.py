@@ -2,7 +2,7 @@
 """
 Download Champion Weights from Hugging Face Hub.
 Pulls 'champion_final.pt' from https://huggingface.co/Neithanvarvas/CBT
-and places it into 'champion_model/scaled_t4/checkpoints/champion_final.pt'.
+and stores it locally as 'checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt'.
 """
 
 import os
@@ -18,7 +18,8 @@ except ImportError:
 DEFAULT_REPO = "Neithanvarvas/CBT"
 DEFAULT_FILENAME = "champion_final.pt"
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_TARGET_DIR = os.path.join(REPO_ROOT, "champion_model", "scaled_t4", "checkpoints")
+DEFAULT_TARGET_DIR = os.path.join(REPO_ROOT, "checkpoints", "cbt")
+LOCAL_NAME = "cbt_18m_2d_rope_R3_k45_sftv5.pt"
 
 
 def parse_args():
@@ -30,9 +31,8 @@ def parse_args():
 
 
 def download_champion_weights(repo_id: str = DEFAULT_REPO, filename: str = DEFAULT_FILENAME, output_dir: str = DEFAULT_TARGET_DIR) -> str:
-    """Downloads weights from Hugging Face with status logging."""
+    """Downloads weights from Hugging Face and renames the champion file to its local name."""
     os.makedirs(output_dir, exist_ok=True)
-    target_path = os.path.join(output_dir, filename)
 
     print(f"[INFO] Pulling '{filename}' from Hugging Face (https://huggingface.co/{repo_id})...")
     try:
@@ -41,6 +41,10 @@ def download_champion_weights(repo_id: str = DEFAULT_REPO, filename: str = DEFAU
             filename=filename,
             local_dir=output_dir,
         )
+        if filename == DEFAULT_FILENAME:
+            local_path = os.path.join(output_dir, LOCAL_NAME)
+            os.replace(downloaded_path, local_path)
+            downloaded_path = local_path
         print(f"[PASS] Successfully downloaded weights to: {downloaded_path}")
         return downloaded_path
     except Exception as e:

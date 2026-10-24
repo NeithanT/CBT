@@ -114,26 +114,26 @@ torchrun --nproc_per_node=2 champion_model/scaled_t4/train_and_eval.py \
     --batch-size 32 \
     --lr 1.0e-3 \
     --max-hours 24.5 \
-    --save-ckpt champion_model/scaled_t4/checkpoints/scaled_t4_final.pt
+    --save-ckpt checkpoints/cbt/cbt_18m_2d_rope_R3_k32_pretrain.pt
 ```
 
 ### 4. Evaluate Benchmarks
 ```bash
 python champion_model/scaled_t4/train_and_eval.py \
     --eval-only \
-    --save-ckpt champion_model/scaled_t4/checkpoints/scaled_t4_final.pt
+    --save-ckpt checkpoints/cbt/cbt_18m_2d_rope_R3_k32_pretrain.pt
 ```
 
 ### 5. Interactive Inference CLI
 ```bash
 python champion_model/scaled_t4/interactive.py \
-    --ckpt champion_model/scaled_t4/checkpoints/scaled_t4_final.pt
+    --ckpt checkpoints/cbt/cbt_18m_2d_rope_R3_k32_pretrain.pt
 ```
 
 ### 6. Universal Search Delegation SFT (Curriculum V2)
 ```bash
 # Run 6,000 steps with 81.25% Search Copy Induction + <=10% Math Carry Replay
-./train.sh champion_model/scaled_t4/checkpoints/scaled_t4_final.pt 6000 sft
+./train.sh checkpoints/cbt/cbt_18m_2d_rope_R3_k32_pretrain.pt 6000 sft
 ```
 
 For complete empirical benchmarks, training curves, and mechanistic autopsies, see [PHASE_4_EMPIRICAL_REPORT.md](../../PHASE_4_EMPIRICAL_REPORT.md).

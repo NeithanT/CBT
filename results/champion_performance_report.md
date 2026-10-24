@@ -1,7 +1,7 @@
 # Clean Performance Report: CBT-18.95M Champion (`champion_final.pt`)
 
 **Evaluation Date**: 2026-10-23
-**Checkpoint**: `champion_model/scaled_t4/checkpoints/champion_final.pt`
+**Checkpoint**: `checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv4.pt` (Hugging Face file name: `champion_final.pt`)
 **Training Data (champion SFT)**: `champion_model/scaled_t4/data/sft_dataset_v4.pt` (45% multi-tool, 35% search copy, 20% math replay with operands of 1-25 digits, k_rand_shift = 45, p_max = 70)
 **Decoding**: Greedy (temperature = 0, argmax)
 **Hardware**: CPU only (no CUDA device available)
@@ -155,5 +155,5 @@ Commands:
 .venv/bin/python benchmarks/evaluate_champion.py --suite arithmetic --samples-per-length 30 --arith-mode teacher_forced --out-json results/champion_clean_arithmetic.json
 .venv/bin/python benchmarks/evaluate_champion.py --suite phrasing --out-json results/champion_clean_phrasing.json
 .venv/bin/python benchmarks/evaluate_champion.py --suite ood --out-json results/champion_clean_ood.json
-.venv/bin/python benchmarks/evaluate_unseen_ood.py --ckpt champion_model/scaled_t4/checkpoints/champion_final.pt --out-json results/unseen_ood_champion.json
+.venv/bin/python benchmarks/evaluate_unseen_ood.py --ckpt checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv4.pt --out-json results/unseen_ood_champion.json
 ```

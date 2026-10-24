@@ -297,7 +297,7 @@ def train_v5(args: argparse.Namespace, model: nn.Module, tokenizer: ScaledTokeni
     print("=" * 80 + "\n", flush=True)
 
     t0 = time.time()
-    best_acc = -1.0
+    best_key: Tuple[float, float] = (-1.0, -1.0)
     step = 0
     while step < args.steps:
         elapsed = time.time() - t0
@@ -342,7 +342,7 @@ def train_v5(args: argparse.Namespace, model: nn.Module, tokenizer: ScaledTokeni
             math_acc = run_math_heldout(model, tokenizer, device, math_heldout)
             print(
                 f"[HELDOUT] Step {step} | Tools exact: {100.0 * acc:.1f}% | Math exact: {100.0 * math_acc:.0f}% | "
-                f"best tools {100.0 * max(best_acc, 0.0):.1f}% | eval {time.time() - t_eval:.0f}s",
+                f"best tools {100.0 * max(best_key[1], 0.0):.1f}% | eval {time.time() - t_eval:.0f}s",
                 flush=True,
             )
             if math_acc < 1.0:
@@ -350,9 +350,10 @@ def train_v5(args: argparse.Namespace, model: nn.Module, tokenizer: ScaledTokeni
             meta = {"loss": loss_val, "heldout_acc": acc, "math_heldout_acc": math_acc, "curriculum": "v5"}
             save(save_path.replace(".pt", f"_step_{step}.pt"), step, meta)
             prune_checkpoints(ckpt_dir, keep_last=args.max_keep_ckpts, base_filename=base_name)
-            # Best = highest tool accuracy among checkpoints with exact held-out arithmetic
-            if math_acc == 1.0 and acc >= best_acc:
-                best_acc = acc
+            # Best = highest tool accuracy among checkpoints with the highest held-out arithmetic
+            # (identical to "math == 100%, then max tools" whenever math reaches 100%)
+            if (math_acc, acc) >= best_key:
+                best_key = (math_acc, acc)
                 save(best_path, step, meta)
                 print(f"[OK] New best held-out checkpoint: {best_path}", flush=True)
 
@@ -362,10 +363,11 @@ def train_v5(args: argparse.Namespace, model: nn.Module, tokenizer: ScaledTokeni
     print(f"[HELDOUT] Final step {step} | Tools exact: {100.0 * acc:.1f}% | Math exact: {100.0 * math_acc:.0f}%", flush=True)
     meta = {"heldout_acc": acc, "math_heldout_acc": math_acc, "curriculum": "v5"}
     save(save_path, step, meta)
-    if math_acc == 1.0 and acc >= best_acc:
+    if (math_acc, acc) >= best_key:
+        best_key = (math_acc, acc)
         save(best_path, step, meta)
-    elif best_acc < 0:
-        print("[WARN] No checkpoint kept exact held-out arithmetic; no _best.pt written. Inspect math before use.", flush=True)
+    if best_key[0] < 1.0:
+        print(f"[WARN] No checkpoint reached exact held-out arithmetic (best {100.0 * best_key[0]:.0f}%); _best.pt holds the highest.", flush=True)
     run_sft_probe(model, tokenizer, device, step)
     print(f"\n[OK] Curriculum V5 SFT complete. Final: {save_path} | Best: {best_path}\n", flush=True)
 
@@ -384,13 +386,13 @@ def main():
     parser.add_argument(
         "--base-ckpt",
         type=str,
-        default="archive/checkpoints/champion_base.pt",
+        default="checkpoints/cbt/cbt_18m_2d_rope_R3_k32_base.pt",
         help="Base checkpoint path",
     )
     parser.add_argument(
         "--save-ckpt",
         type=str,
-        default="champion_model/scaled_t4/checkpoints/champion_final.pt",
+        default="checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv4.pt",
         help="Target checkpoint path",
     )
     parser.add_argument("--curriculum", type=str, default="v4", choices=["v4", "v5"], help="v4 produces the champion; v5 is the decontaminated broad-copy curriculum")
@@ -401,34 +403,36 @@ def main():
     parser.add_argument("--search-frac", type=float, default=0.35, help="V5 search fraction per batch")
     parser.add_argument("--heldout-size", type=int, default=64, help="V5 generated held-out traces for checkpoint selection")
     parser.add_argument("--seed", type=int, default=2026, help="V5 stream seed")
+    parser.add_argument("--pos-emb", type=str, default=None, choices=["rope_2d", "rope_1d"], help="Expected position encoding; aborts if the resolved base checkpoint differs")
     args = parser.parse_args()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     tokenizer = ScaledTokenizer()
-    config = ScaledGPTConfig(vocab_size=tokenizer.vocab_size, k_rand_shift=args.k_rand_shift)
-    model = ScaledGPT(config, tokenizer=tokenizer).to(device)
 
-    # Resolve base checkpoint (prioritizing champion_base.pt / scaled_t4_sft_all_tools.pt)
+    # Resolve base checkpoint (pre-SFT base first, then Stage 1 pretraining)
     resolved_base = None
     candidates = [
         args.base_ckpt,
         os.path.join(ROOT_DIR, args.base_ckpt),
-        os.path.join(ROOT_DIR, "archive/checkpoints/champion_base.pt"),
-        os.path.join(ROOT_DIR, "archive/checkpoints/champion_base.pt"),
-        os.path.join(ROOT_DIR, "champion_model/scaled_t4/checkpoints/scaled_t4_sft_all_tools.pt"),
-        os.path.join(ROOT_DIR, "champion_model/scaled_t4/checkpoints/scaled_t4_sft_search.pt"),
-        os.path.join(ROOT_DIR, "champion_model/checkpoints/scaled_t4_sft_search_step_7000.zip"),
+        os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k32_base.pt"),
         "/kaggle/working/checkpoints/scaled_t4/champion_base.pt",
-        "/kaggle/working/checkpoints/scaled_t4/scaled_t4_sft_search.pt",
-        os.path.join(ROOT_DIR, "champion_model/scaled_t4/checkpoints/scaled_t4_final.pt"),
+        os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k32_pretrain.pt"),
     ]
     for c in candidates:
         if os.path.exists(c) and not os.path.isdir(c):
             resolved_base = c
             break
 
+    ckpt_data = torch.load(resolved_base, map_location=device, weights_only=False) if resolved_base else {}
+    # Position encoding is inherited from the base checkpoint (rope_2d or the rope_1d ablation)
+    pos_emb_type = getattr(ckpt_data.get("config"), "pos_emb_type", "rope_2d")
+    if args.pos_emb is not None and (resolved_base is None or pos_emb_type != args.pos_emb):
+        raise SystemExit(f"[FAIL] --pos-emb {args.pos_emb} but resolved base is {resolved_base} ({pos_emb_type})")
+    config = ScaledGPTConfig(vocab_size=tokenizer.vocab_size, k_rand_shift=args.k_rand_shift, pos_emb_type=pos_emb_type)
+    model = ScaledGPT(config, tokenizer=tokenizer).to(device)
+    print(f"[INFO] Position encoding: {pos_emb_type}")
+
     if resolved_base is not None:
-        ckpt_data = torch.load(resolved_base, map_location=device, weights_only=False)
         model.load_state_dict(ckpt_data["model_state_dict"])
         model.config.k_rand_shift = args.k_rand_shift
         step_tag = f" (from step {ckpt_data.get('step')})" if "step" in ckpt_data else ""
@@ -583,7 +587,7 @@ def main():
             print(f"[INFO] Saved intermediate SFT checkpoint: {step_ckpt}", flush=True)
             prune_checkpoints(ckpt_dir, keep_last=args.max_keep_ckpts, base_filename=base_name)
 
-    # Save final SFT model (both to save_path and updating scaled_t4_sft_search.pt for seamless CLI compatibility)
+    # Save final SFT model
     raw_model = model.module if hasattr(model, "module") else model
     final_payload = {
         "model_state_dict": raw_model.state_dict(),
@@ -592,10 +596,6 @@ def main():
     }
     torch.save(final_payload, save_path)
     sync_checkpoint_to_kaggle(save_path)
-    compat_path = os.path.join(ckpt_dir, "scaled_t4_sft_search.pt")
-    if os.path.abspath(save_path) != os.path.abspath(compat_path):
-        torch.save(final_payload, compat_path)
-        sync_checkpoint_to_kaggle(compat_path)
     print(f"\n[OK] Final All-Tools Annealed SFT model saved: {save_path}\n", flush=True)
 
 

@@ -44,15 +44,15 @@ metrics:
 
 ## 1. Model Overview
 
-**Character-Based Transformer (CBT)** is an 18.95M-parameter character-level Transformer whose tokens carry a rule-assigned two-dimensional (2D) coordinate $(p, \\tau)$ used by **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** alongside **Weight-Tied Recurrent Depth ($R = 3$)**.
+**Character-Based Transformer (CBT-18.95M)** is an 18.94M-parameter character-level Transformer (111-token vocabulary) whose tokens carry a rule-assigned two-dimensional coordinate $(p, \\tau)$ used by **Decoupled 2D Rotary Position Embeddings (2D-RoPE)**, with weight-tied recurrent depth ($R = 3$). This release is the **V5 model** (`champion_final.pt`): pretraining, search-copy and all-tools fine-tuning, V4 fine-tuning, then a 23,927-step V5 fine-tuning on a decontaminated online stream (35% search copy, 20% arithmetic replay of 1-25 digits, the rest multi-tool and chat). Coordinate shift masking uses $k=45$, so $p_{\\max} = 25 + 45 = 70$.
 
-Trained on 1- to 25-digit arithmetic replay, multi-tool dialogues, and search copy, with random coordinate shift masking $k=45$ (macro column coordinates up to $p_{\\max} = 25 + 45 = 70$), **CBT-18.95M** (`champion_final.pt`) achieves:
-- **100.0% (240/240; 95% Wilson CI [98.4, 100.0]%)** on random multi-carry sums from 16 to 50 digits, and **100.0% (18/18)** on structured 16- to 50-digit sums (including 50-digit cascading carry $99\\dots99 + 1$). Digits 16–25 are seen in training; 30–50 digits are unseen.
-- **98.9% (89/90)** on in-distribution sums at 8, 12, and 15 digits (the single miss is at 15 digits).
-- **100.0% (20/20)** at 55 digits, then **70.0% (14/20)** at 60 digits, **40.0% (6/15)** at 70 digits, and **0.0%** at 80–100 digits (random sweep). A separate teacher-forced suite gives 80% at both 60 and 70 digits.
-- **Equalized 1–15d, $T=1024$ Control Study (12,800 Random Problems)**: When four equalized 100k models (`1D-RoPE Standard`, `1D-RoPE + Offset`, `1D-RoPE + Ruoss et al. 2023 Randomized Positions`, and `Decoupled 2D-RoPE k=32`) are trained on the exact same 1–15d dataset with $T=1024$ and evaluated on 200 random problems per length up to 100d, all three 1D/Ruoss variants score **0.0% (0/200, CI [0.0, 1.9]%)** across 16–100d, whereas equalized 2D-RoPE achieves **81.4% (977/1,200, CI [79.1, 83.5]%)** across 16–40d (up to 92.0% at 16d and 25d).
-- **100.0% (90/90)** on a 6-category multi-tool benchmark (the check counts tags only, not argument correctness); **80.8% (21/26)** tool routing and **50.0% (13/26)** exact argument extraction on a 26-case phrasing suite with audited entities.
-- **100.0% (18/18)** zero-shot OOD tool routing, with **55.6% (10/18)** exact argument copying on 18 fresh prompts.
+Results (greedy decoding; Wilson 95% CIs are in the paper and in `results/`):
+- **Addition**, 30 random problems per length (70% uniform, 15% dense carry, 15% cascades), scored as teacher-forced greedy agreement with the gold scratchpad and answer: **150/150** at 4-16 digits, **60/60** at 20 and 25 digits (seen), **210/210** at 26-55 digits (unseen), **25/30** at 60 and **19/30** at 70 digits. Pooled over the unseen 26-70 digits: **254/270**.
+- **Tool use**: **26/26** exact calls on a 26-prompt phrasing suite, **18/18** on 18 out-of-distribution prompts, and **30/30** exact copies of entities absent from the training corpus (unseen-30). The V5 data was broadened after the previous model's failures on the first two suites were seen, so the unseen-30 set is the cleaner evidence.
+- **1D-RoPE control**: a twin with the same architecture, V5 data and step count but standard 1D-RoPE scores **0/270** at 26-70 digits and **73/74** exact tool calls. The 2D coordinates account for the arithmetic extrapolation, not for the tool-use results.
+- **Baselines**: standard 1D-RoPE models trained on 1-12 digit sums score 0/30 at every length from 14 to 35 digits (character and BPE vocabularies; looped, hierarchical and hybrid variants too).
+
+All results are single training runs. Details, limitations and the failure analysis are in the paper.
 
 ---
 
@@ -60,65 +60,47 @@ Trained on 1- to 25-digit arithmetic replay, multi-tool dialogues, and search co
 
 | Parameter | Specification |
 | :--- | :--- |
-| **Model Name** | Character-Based Transformer (CBT-18.95M) |
-| **Total Parameters** | 18,946,560 (~18.95M) |
-| **Non-Embedding Parameters** | 18,887,680 (~18.89M) |
+| **Total Parameters** | 18,944,512 |
+| **Non-Embedding Parameters** | 18,887,680 |
 | **Physical Layers (L)** | 6 |
-| **Recurrent Passes (R)** | 3 (Effective Depth = 18 layers) |
-| **Hidden Dimension (d_model)** | 512 |
-| **Attention Heads (H)** | 8 (Head dimension = 64) |
-| **Max Sequence Length (T)** | 1024 (Coordinate cache up to 4096) |
-| **Positional Embedding** | Decoupled 2D-RoPE (d/2 macro column $p$, d/2 micro step $\\tau$; rule-assigned via `compute_2d_coords`) |
-| **Coordinate Shift Masking (k)** | $k = 45$ ($p_{\\max} = 25 + 45 = 70$ during 1–25d arithmetic replay) |
-| **Vocabulary Size** | 115 (14 structural control tags + 101 ASCII characters) |
-| **Weight Tying** | W_te == W_lm_head |
+| **Recurrent Passes (R)** | 3 (effective depth 18) |
+| **Hidden Dimension** | 512 |
+| **Attention Heads** | 8 (head dimension 64) |
+| **Context** | 1024 tokens |
+| **Positional Embedding** | Decoupled 2D-RoPE (half of each head rotated by place $p$, half by step $\\tau$; rule-assigned) |
+| **Coordinate Shift Masking** | $k = 45$ |
+| **Vocabulary** | 111 (14 control tokens + 97 characters) |
+| **Weight Tying** | input embedding = output projection |
 
 ---
 
-## 3. Empirical Evaluation Benchmarks (Greedy Decoding)
+## 3. Usage
 
-| Benchmark Suite | Scope / Test Cases | Final Score | 95% Wilson CI |
-| :--- | :--- | :--- | :--- |
-| **In-Distribution Sums (8, 12, 15 Digits)** | Seen in Training | **98.9% (89/90)** | [94.0, 99.8]% |
-| **16–50 Digit Structured Sums** | 18 Cases (incl. $99\\dots99 + 1$) | **100.0% (18/18)** | [82.4, 100.0]% |
-| **16–50 Digit Random Multi-Carry Sweep** | 8 Lengths $\\times$ 30 Cases ($n=240$) | **100.0% (240/240)** | [98.4, 100.0]% |
-| **55–70 Digit Random Sweep** | 55d: 20 cases; 60d: 20; 70d: 15 | 55d: **100.0%**; 60d: **70.0%**; 70d: **40.0%** | 55d [83.9, 100.0]%; 60d [48.1, 85.5]%; 70d [19.8, 64.3]% |
-| **80–100 Digit Random Sweep** | 10 Cases per length | **0.0%** | [0.0, 27.8]% |
-| **Multi-Tool Benchmark (6 Categories)** | 90 Dialogues (tag-presence check) | **100.0% (90/90)** | [95.9, 100.0]% |
-| **Multi-Tool Phrasing Routing** | 26 Audited Cases, 9 Schemas | **80.8% (21/26)** | [62.1, 91.5]% |
-| **Multi-Tool Phrasing Exact Arguments** | 26 Audited Cases | **50.0% (13/26)** | [32.1, 67.9]% |
-| **Zero-Shot OOD Routing** | 18 Fresh Prompts | **100.0% (18/18)** | [82.4, 100.0]% |
-| **Zero-Shot OOD Exact Argument Copy** | 18 Fresh Prompts | **55.6% (10/18)** | [33.7, 75.4]% |
-
----
-
-## 4. Usage & Inference
-
-### Local Quickstart
+The file is a `torch.save` dictionary with the config and `model_state_dict`.
 
 ```python
 import torch
-from model import ScaledGPT, ScaledConfig
+from model import ScaledGPT
 from tokenizer import ScaledTokenizer
 
-# 1. Load configuration and model
-config = ScaledConfig()
-model = ScaledGPT(config)
-
-# 2. Load weights
-state_dict = torch.load("champion_final.pt", map_location="cpu", weights_only=True)
-model.load_state_dict(state_dict)
-model.eval()
-
-# 3. Initialize tokenizer
+ckpt = torch.load("champion_final.pt", map_location="cpu", weights_only=False)
 tokenizer = ScaledTokenizer()
+model = ScaledGPT(ckpt["config"], tokenizer=tokenizer)
+model.load_state_dict(ckpt["model_state_dict"])
+model.eval()
 ```
 
-### Interactive CLI
+Interactive CLI:
 
 ```bash
 python interactive.py --ckpt champion_final.pt
 ```
+
+---
+
+## 4. Files
+
+`champion_final.pt` (V5 model), source files for stand-alone execution, `RESEARCH_PAPER.md`, and the evaluation results in JSON.
 
 ---
 
@@ -139,7 +121,7 @@ def parse_args():
     parser.add_argument("--repo_id", type=str, required=True, help="HF Repo ID in format 'username/repo_name'")
     parser.add_argument("--token", type=str, default=None, help="Hugging Face User Access Token (write access)")
     parser.add_argument("--private", action="store_true", help="Set repository to private")
-    parser.add_argument("--ckpt", type=str, default="champion_model/scaled_t4/checkpoints/champion_final.pt", help="Path to checkpoint")
+    parser.add_argument("--ckpt", type=str, default="checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt", help="Path to checkpoint")
     return parser.parse_args()
 
 
@@ -179,10 +161,15 @@ def main():
                 shutil.copy2(src_path, os.path.join(tmp_dir, fname))
                 print(f"  [OK] Staged {fname}")
 
-        # 4. Copy research paper and random 16-100d evaluation results
+        # 4. Copy research paper and evaluation results
         extra_files = [
             "RESEARCH_PAPER.md",
-            "results/random_extrapolation_champion_16_to_100d.json",
+            "results/champion_v3_arithmetic.json",
+            "results/champion_v3_arithmetic_4_16d.json",
+            "results/champion_v3_phrasing.json",
+            "results/champion_v3_ood.json",
+            "results/champion_v3_unseen_ood.json",
+            "results/cbt1d_v5_arithmetic.json",
             "results/equalized_15d_1024_and_ruoss_sweep.json",
         ]
         for ef in extra_files:
@@ -195,7 +182,7 @@ def main():
             folder_path=tmp_dir,
             repo_id=args.repo_id,
             repo_type="model",
-            commit_message="[UPDATE] Update CBT-18.95M paper, model card, and 16-100d random extrapolation results"
+            commit_message="[UPDATE] Replace weights with the V5 model; update paper, model card and evaluation results"
         )
         print(f"[PASS] Successfully uploaded ScaledGPT champion model to https://huggingface.co/{args.repo_id}")
 

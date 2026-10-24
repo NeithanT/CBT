@@ -241,7 +241,7 @@ def run_sample_efficiency_experiment(
         cfg = HRMRoPEConfig(vocab_size=tokenizer.vocab_size)
         model = HRMRoPE(cfg).to(device)
 
-        ckpt_path = os.path.join(checkpoint_dir, f"hrm_rope_{n}_examples.pt")
+        ckpt_path = os.path.join(checkpoint_dir, f"hrm_2d_rope_k32_n{n}.pt")
         train_texts = datasets[n]
         n_steps = steps_map.get(n, 400)
         b_size = batch_size_map.get(n, 16)
