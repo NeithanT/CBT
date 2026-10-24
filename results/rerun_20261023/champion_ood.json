@@ -1,0 +1,17 @@
+{
+  "checkpoint": "checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv4.pt",
+  "max_train_operand_digits": 25,
+  "ood": {
+    "total": 18,
+    "routed": 18,
+    "routing_ci": [
+      82.4,
+      100.0
+    ],
+    "exact_matches": 10,
+    "exact_ci": [
+      33.7,
+      75.4
+    ]
+  }
+}

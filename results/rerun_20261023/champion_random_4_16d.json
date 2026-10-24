@@ -1,0 +1,126 @@
+{
+  "per_length": {
+    "4": {
+      "digits": 4,
+      "n_samples": 30,
+      "exact_match": 30,
+      "accuracy_pct": 100.0,
+      "wilson_95_ci": [
+        88.6,
+        100.0
+      ],
+      "think_exact": 30,
+      "think_acc_pct": 100.0,
+      "think_wilson_95_ci": [
+        88.6,
+        100.0
+      ],
+      "lparen_errors": 0,
+      "off_by_one_readout_errors": 0,
+      "seq_tokens": 70,
+      "elapsed_sec": 11.31,
+      "tok_per_sec": 185.7
+    },
+    "8": {
+      "digits": 8,
+      "n_samples": 30,
+      "exact_match": 30,
+      "accuracy_pct": 100.0,
+      "wilson_95_ci": [
+        88.6,
+        100.0
+      ],
+      "think_exact": 30,
+      "think_acc_pct": 100.0,
+      "think_wilson_95_ci": [
+        88.6,
+        100.0
+      ],
+      "lparen_errors": 0,
+      "off_by_one_readout_errors": 0,
+      "seq_tokens": 122,
+      "elapsed_sec": 29.64,
+      "tok_per_sec": 123.5
+    },
+    "12": {
+      "digits": 12,
+      "n_samples": 30,
+      "exact_match": 30,
+      "accuracy_pct": 100.0,
+      "wilson_95_ci": [
+        88.6,
+        100.0
+      ],
+      "think_exact": 30,
+      "think_acc_pct": 100.0,
+      "think_wilson_95_ci": [
+        88.6,
+        100.0
+      ],
+      "lparen_errors": 0,
+      "off_by_one_readout_errors": 0,
+      "seq_tokens": 174,
+      "elapsed_sec": 44.4,
+      "tok_per_sec": 117.6
+    },
+    "14": {
+      "digits": 14,
+      "n_samples": 30,
+      "exact_match": 30,
+      "accuracy_pct": 100.0,
+      "wilson_95_ci": [
+        88.6,
+        100.0
+      ],
+      "think_exact": 30,
+      "think_acc_pct": 100.0,
+      "think_wilson_95_ci": [
+        88.6,
+        100.0
+      ],
+      "lparen_errors": 0,
+      "off_by_one_readout_errors": 0,
+      "seq_tokens": 200,
+      "elapsed_sec": 56.84,
+      "tok_per_sec": 105.6
+    },
+    "16": {
+      "digits": 16,
+      "n_samples": 30,
+      "exact_match": 30,
+      "accuracy_pct": 100.0,
+      "wilson_95_ci": [
+        88.6,
+        100.0
+      ],
+      "think_exact": 30,
+      "think_acc_pct": 100.0,
+      "think_wilson_95_ci": [
+        88.6,
+        100.0
+      ],
+      "lparen_errors": 0,
+      "off_by_one_readout_errors": 0,
+      "seq_tokens": 226,
+      "elapsed_sec": 70.69,
+      "tok_per_sec": 95.9
+    }
+  },
+  "failures": [],
+  "summary_16_50": {
+    "total_samples": 30,
+    "exact_match": 30,
+    "accuracy_pct": 100.0,
+    "wilson_95_ci": [
+      88.6,
+      100.0
+    ],
+    "think_exact": 30,
+    "think_acc_pct": 100.0,
+    "think_wilson_95_ci": [
+      88.6,
+      100.0
+    ]
+  },
+  "total_elapsed_sec": 212.91
+}

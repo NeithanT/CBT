@@ -1,0 +1,354 @@
+{
+  "total": 30,
+  "routing_passed": 28,
+  "routing_pct": 93.33333333333333,
+  "routing_ci": [
+    78.7,
+    98.2
+  ],
+  "exact_copy_passed": 4,
+  "headline_exact_pct": 13.333333333333334,
+  "headline_exact_ci": [
+    5.3,
+    29.7
+  ],
+  "copy_given_routed_pct": 14.285714285714286,
+  "copy_given_routed_ci": [
+    5.7,
+    31.5
+  ],
+  "binomial_p_value_vs_50pct": 0.9999957848340273,
+  "is_statistically_gt_50pct": false,
+  "itemized": [
+    {
+      "id": 1,
+      "domain": "Unseen Figure",
+      "prompt": "<USER>Who was Baruch Spinoza?</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "Baruch Spinoza",
+      "raw_response": "The user requests factual information. Querying search.</THINK><CALL>search(query=\"Narcha Dpinva\")</CALL>",
+      "parsed_call": "search(query=\"Narcha Dpinva\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 2,
+      "domain": "Unseen Figure",
+      "prompt": "<USER>Who was Hypatia of Alexandria?</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "Hypatia of Alexandria",
+      "raw_response": "The user requests current weather information. I will query the get_weather tool.</THINK><CALL>get_weather(city=\"Alexandriandria\")</CALL>",
+      "parsed_call": "get_weather(city=\"Alexandriandria\")",
+      "route_ok": false,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 3,
+      "domain": "Unseen Figure",
+      "prompt": "<USER>Who was Ludwig van Beethoven?</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "Ludwig van Beethoven",
+      "raw_response": "The user requests factual information. Querying search.</THINK><CALL>search(query=\"Leetwovan meethoven\")</CALL>",
+      "parsed_call": "search(query=\"Leetwovan meethoven\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 4,
+      "domain": "Unseen Figure",
+      "prompt": "<USER>Who was Johannes Vermeer?</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "Johannes Vermeer",
+      "raw_response": "The user requests biographical information. Calling search.</THINK><CALL>search(query=\"GMoennes tem Ges\")</CALL>",
+      "parsed_call": "search(query=\"GMoennes tem Ges\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 5,
+      "domain": "Unseen Figure",
+      "prompt": "<USER>Who is Ada Yonath?</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "Ada Yonath",
+      "raw_response": "The user requests factual information. Querying search.</THINK><CALL>search(query=\"Ada A\")</CALL>",
+      "parsed_call": "search(query=\"Ada A\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 6,
+      "domain": "Unseen Figure",
+      "prompt": "<USER>Who was Srinivasa Ramanujan?</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "Srinivasa Ramanujan",
+      "raw_response": "The user requests biographical information. Calling search.</THINK><CALL>search(query=\"Drinazasa gaman\")</CALL>",
+      "parsed_call": "search(query=\"Drinazasa gaman\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 7,
+      "domain": "Unseen City",
+      "prompt": "<USER>What is the weather in Addis Ababa?</USER><THINK>",
+      "expected_tool": "get_weather",
+      "expected_arg": "Addis Ababa",
+      "raw_response": "The user requests current weather information. I will query the get_weather tool.</THINK><CALL>get_weather(city=\"Auaba\")</CALL>",
+      "parsed_call": "get_weather(city=\"Auaba\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 8,
+      "domain": "Unseen City",
+      "prompt": "<USER>What is the weather in Ulaanbaatar?</USER><THINK>",
+      "expected_tool": "get_weather",
+      "expected_arg": "Ulaanbaatar",
+      "raw_response": "The user requests current weather information. I will query the get_weather tool.</THINK><CALL>get_weather(city=\"Rlainbation\")</CALL>",
+      "parsed_call": "get_weather(city=\"Rlainbation\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 9,
+      "domain": "Unseen City",
+      "prompt": "<USER>Weather on Antananarivo</USER><THINK>",
+      "expected_tool": "get_weather",
+      "expected_arg": "Antananarivo",
+      "raw_response": "The user is asking for weather conditions. Querying get_weather.</THINK><CALL>get_weather(city=\"Anana\")</CALL>",
+      "parsed_call": "get_weather(city=\"Anana\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 10,
+      "domain": "Unseen City",
+      "prompt": "<USER>How is the weather in Dar es Salaam</USER><THINK>",
+      "expected_tool": "get_weather",
+      "expected_arg": "Dar es Salaam",
+      "raw_response": "The user is asking for weather conditions. Querying get_weather.</THINK><CALL>get_weather(city=\"Sabjan\")</CALL>",
+      "parsed_call": "get_weather(city=\"Sabjan\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 11,
+      "domain": "Unseen City",
+      "prompt": "<USER>Check the weather for Belo Horizonte</USER><THINK>",
+      "expected_tool": "get_weather",
+      "expected_arg": "Belo Horizonte",
+      "raw_response": "The user is asking for weather conditions. Querying get_weather.</THINK><CALL>get_weather(city=\"Belo\")</CALL>",
+      "parsed_call": "get_weather(city=\"Belo\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 12,
+      "domain": "Unseen City",
+      "prompt": "<USER>Forecast for Chiang Mai.</USER><THINK>",
+      "expected_tool": "get_weather",
+      "expected_arg": "Chiang Mai",
+      "raw_response": "The user requests current weather information. I will query the get_weather tool.</THINK><CALL>get_weather(city=\"Cai\")</CALL>",
+      "parsed_call": "get_weather(city=\"Cai\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 13,
+      "domain": "Unseen Science",
+      "prompt": "<USER>What are quarks and leptons</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "quarks and leptons",
+      "raw_response": "The user is asking a factual question. I will query the search tool.</THINK><CALL>search(query=\"quarks\")</CALL>",
+      "parsed_call": "search(query=\"quarks\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 14,
+      "domain": "Unseen Science",
+      "prompt": "<USER>Define epigenetics</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "epigenetics",
+      "raw_response": "The user requests factual information. Querying search.</THINK><CALL>search(query=\"epigenetics\")</CALL>",
+      "parsed_call": "search(query=\"epigenetics\")",
+      "route_ok": true,
+      "exact_copy_ok": true
+    },
+    {
+      "id": 15,
+      "domain": "Unseen Science",
+      "prompt": "<USER>Explain superconductivity</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "superconductivity",
+      "raw_response": "The user is asking a factual question. I will query the search tool.</THINK><CALL>search(query=\"supercondyctivit\")</CALL>",
+      "parsed_call": "search(query=\"supercondyctivit\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 16,
+      "domain": "Unseen Science",
+      "prompt": "<USER>What is the mitochondrial matrix</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "mitochondrial matrix",
+      "raw_response": "The user requests current weather information. I will query the get_weather tool.</THINK><CALL>get_weather(city=\"matrix\")</CALL>",
+      "parsed_call": "get_weather(city=\"matrix\")",
+      "route_ok": false,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 17,
+      "domain": "Unseen Science",
+      "prompt": "<USER>Explain bose einstein condensate</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "bose einstein condensate",
+      "raw_response": "The user requests factual information. Querying search.</THINK><CALL>search(query=\"bose bonstein consenstation\")</CALL>",
+      "parsed_call": "search(query=\"bose bonstein consenstation\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 18,
+      "domain": "Unseen Science",
+      "prompt": "<USER>What is asymptotic freedom?</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "asymptotic freedom",
+      "raw_response": "The user is asking a factual question. I will query the search tool.</THINK><CALL>search(query=\"asjomptotic freed\")</CALL>",
+      "parsed_call": "search(query=\"asjomptotic freed\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 19,
+      "domain": "Unseen Concept",
+      "prompt": "<USER>What is a croissant?</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "croissant",
+      "raw_response": "The user is inquiring about this entity. I will query the search tool.</THINK><CALL>search(query=\"croossant\")</CALL>",
+      "parsed_call": "search(query=\"croossant\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 20,
+      "domain": "Unseen Concept",
+      "prompt": "<USER>Define baklava</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "baklava",
+      "raw_response": "The user requests factual information. Querying search.</THINK><CALL>search(query=\"baklavan\")</CALL>",
+      "parsed_call": "search(query=\"baklavan\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 21,
+      "domain": "Unseen Concept",
+      "prompt": "<USER>What is shakshuka?</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "shakshuka",
+      "raw_response": "The user is seeking knowledge on this topic. I will search the web.</THINK><CALL>search(query=\"shakshukak\")</CALL>",
+      "parsed_call": "search(query=\"shakshukak\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 22,
+      "domain": "Unseen Concept",
+      "prompt": "<USER>Tell me about the astrolabe</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "astrolabe",
+      "raw_response": "The user is seeking knowledge on this topic. I will search the web.</THINK><CALL>search(query=\"theeastrolabe\")</CALL>",
+      "parsed_call": "search(query=\"theeastrolabe\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 23,
+      "domain": "Unseen Concept",
+      "prompt": "<USER>What is a clavichord</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "clavichord",
+      "raw_response": "The user is asking a factual question. I will query the search tool.</THINK><CALL>search(query=\"clavichord\")</CALL>",
+      "parsed_call": "search(query=\"clavichord\")",
+      "route_ok": true,
+      "exact_copy_ok": true
+    },
+    {
+      "id": 24,
+      "domain": "Unseen Concept",
+      "prompt": "<USER>Explain origami</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "origami",
+      "raw_response": "The user requests factual information. Querying search.</THINK><CALL>search(query=\"origami\")</CALL>",
+      "parsed_call": "search(query=\"origami\")",
+      "route_ok": true,
+      "exact_copy_ok": true
+    },
+    {
+      "id": 25,
+      "domain": "Unseen Nonce",
+      "prompt": "<USER>Who is Vornik Plaxen?</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "Vornik Plaxen",
+      "raw_response": "The user requests factual information. Querying search.</THINK><CALL>search(query=\"Ilaxen\")</CALL>",
+      "parsed_call": "search(query=\"Ilaxen\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 26,
+      "domain": "Unseen Nonce",
+      "prompt": "<USER>Define Zyntral Krelvok</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "Zyntral Krelvok",
+      "raw_response": "The user requests factual information. Querying search.</THINK><CALL>search(query=\"Myntral creavok\")</CALL>",
+      "parsed_call": "search(query=\"Myntral creavok\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 27,
+      "domain": "Unseen Nonce",
+      "prompt": "<USER>Weather on Brixendale</USER><THINK>",
+      "expected_tool": "get_weather",
+      "expected_arg": "Brixendale",
+      "raw_response": "The user requests current weather information. I will query the get_weather tool.</THINK><CALL>get_weather(city=\"Brix\")</CALL>",
+      "parsed_call": "get_weather(city=\"Brix\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 28,
+      "domain": "Unseen Nonce",
+      "prompt": "<USER>What is Glarndoxification?</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "Glarndoxification",
+      "raw_response": "The user is asking a factual question. I will query the search tool.</THINK><CALL>search(query=\"Glarndoxiavicatooo\")</CALL>",
+      "parsed_call": "search(query=\"Glarndoxiavicatooo\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    },
+    {
+      "id": 29,
+      "domain": "Unseen Nonce",
+      "prompt": "<USER>What is a Trundleblump</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "Trundleblump",
+      "raw_response": "The user is asking a factual question. I will query the search tool.</THINK><CALL>search(query=\"Trundleblump\")</CALL>",
+      "parsed_call": "search(query=\"Trundleblump\")",
+      "route_ok": true,
+      "exact_copy_ok": true
+    },
+    {
+      "id": 30,
+      "domain": "Unseen Nonce",
+      "prompt": "<USER>Tell me about a Skrevling</USER><THINK>",
+      "expected_tool": "search",
+      "expected_arg": "Skrevling",
+      "raw_response": "The user is asking a factual question. I will query the search tool.</THINK><CALL>search(query=\"avinglez\")</CALL>",
+      "parsed_call": "search(query=\"avinglez\")",
+      "route_ok": true,
+      "exact_copy_ok": false
+    }
+  ]
+}

@@ -1,0 +1,532 @@
+{
+  "lengths": [
+    4,
+    8,
+    12,
+    14,
+    16,
+    18,
+    20,
+    25,
+    30,
+    35
+  ],
+  "results": [
+    {
+      "checkpoint": "checkpoints/baselines_18m/bpe50k_1d_rope_wordcot_12d.pt",
+      "model": "Standard (BPE Subword)",
+      "model_type": "standard",
+      "condition": 2,
+      "non_embedding_params": 18915328,
+      "block_size": 512,
+      "seed": 20261023,
+      "per_length": {
+        "4": {
+          "seen": true,
+          "correct": 30,
+          "n": 30,
+          "acc_pct": 100.0,
+          "wilson_ci_pct": [
+            88.6,
+            100.0
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 311.8,
+          "example_failures": []
+        },
+        "8": {
+          "seen": true,
+          "correct": 30,
+          "n": 30,
+          "acc_pct": 100.0,
+          "wilson_ci_pct": [
+            88.6,
+            100.0
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 1109.8,
+          "example_failures": []
+        },
+        "12": {
+          "seen": true,
+          "correct": 14,
+          "n": 30,
+          "acc_pct": 46.7,
+          "wilson_ci_pct": [
+            30.2,
+            63.9
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 4249.6,
+          "example_failures": [
+            {
+              "prompt": "956842126623+929685555994=<THINK>",
+              "expected": "1886527682617",
+              "answer": "10498106826",
+              "tail": "y 1=9, digit 9, carry 0. Column 10: 5+9=14, digit 4, carry 1. Column 11: 9+0 + carry 1=10, digit 0, carry 1. Column 10: carry 1 placed.</THINK>=10498106826<EOS>"
+            },
+            {
+              "prompt": "872907850936+863126619467=<THINK>",
+              "expected": "1736034470403",
+              "answer": "173603447040",
+              "tail": " 1=6, digit 6, carry 0. Column 10: 7+6=13, digit 3, carry 1. Column 11: 8+8 + carry 1=17, digit 7, carry 1. Column 10: carry 1 placed.</THINK>=173603447040<EOS>"
+            }
+          ]
+        },
+        "14": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 4265.6,
+          "example_failures": [
+            {
+              "prompt": "23471143432908+17367459435862=<THINK>",
+              "expected": "40838602868770",
+              "answer": "411186870170",
+              "tail": "mn 9: 4+6 + carry 1=11, digit 1, carry 1. Column 10: 3+7 + carry 1=11, digit 1, carry 1. Column 11: 2+1 + carry 1=4, digit 4, carry 0.</THINK>=411186870170<EOS>"
+            },
+            {
+              "prompt": "30196866109598+43201691181956=<THINK>",
+              "expected": "73398557291554",
+              "answer": "733984801554",
+              "tail": "8: 9+0=9, digit 9, carry 0. Column 9: 1+2=3, digit 3, carry 0. Column 10: 0+3=3, digit 3, carry 0. Column 11: 3+4=7, digit 7, carry 0.</THINK>=733984801554<EOS>"
+            }
+          ]
+        },
+        "16": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 2266.1,
+          "example_failures": [
+            {
+              "prompt": "6735175463086154+2504380990058239=<THINK>",
+              "expected": "9239556453144393",
+              "answer": "98615636593",
+              "tail": ", digit 1, carry 1. Column 8: 5+0 + carry 1=6, digit 6, carry 0. Column 9: 3+5=8, digit 8, carry 0. Column 10: 7+2=9, digit 9, carry 0.</THINK>=98615636593<EOS>"
+            },
+            {
+              "prompt": "8800841117855161+9099450814205263=<THINK>",
+              "expected": "17900291932060424",
+              "answer": "1789998321824",
+              "tail": "olumn 9: 0+9=9, digit 9, carry 0. Column 10: 8+0=8, digit 8, carry 0. Column 11: 8+9=17, digit 7, carry 1. Column 11: carry 1 placed.</THINK>=1789998321824<EOS>"
+            }
+          ]
+        },
+        "18": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 3017.2,
+          "example_failures": [
+            {
+              "prompt": "775409140248344675+273300633130281266=<THINK>",
+              "expected": "1048709773378625941",
+              "answer": "150844118721",
+              "tail": "5+3=8, digit 8, carry 0. Column 9: 7+3=10, digit 0, carry 1. Column 10: 7+7 + carry 1=15, digit 5, carry 1. Column 11: carry 1 placed.</THINK>=150844118721<EOS>"
+            },
+            {
+              "prompt": "586372270871392616+532943463611048115=<THINK>",
+              "expected": "1119315734482440731",
+              "answer": "140258033549",
+              "tail": "t 2, carry 1. Column 10: 5+4 + carry 1=10, digit 0, carry 1. Column 11: 8+5 + carry 1=14, digit 4, carry 1. Column 10: carry 1 placed.</THINK>=140258033549<EOS>"
+            }
+          ]
+        },
+        "20": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 2156.7,
+          "example_failures": [
+            {
+              "prompt": "64012498003866726193+44789680393999591374=<THINK>",
+              "expected": "108802178397866317567",
+              "answer": "111911992877",
+              "tail": "y 1=9, digit 9, carry 0. Column 9: 4+7=11, digit 1, carry 1. Column 10: 6+4 + carry 1=11, digit 1, carry 1. Column 11: carry 1 placed.</THINK>=111911992877<EOS>"
+            },
+            {
+              "prompt": "77837753062989223770+41066777891363461479=<THINK>",
+              "expected": "118904530954352685249",
+              "answer": "11884756701",
+              "tail": " 7+0 + carry 1=8, digit 8, carry 0. Column 10: 7+1=8, digit 8, carry 0. Column 11: 7+4=11, digit 1, carry 1. Column 10: carry 1 placed.</THINK>=11884756701<EOS>"
+            }
+          ]
+        },
+        "25": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 2121.1,
+          "example_failures": [
+            {
+              "prompt": "1730960225679664675381648+4213358518751607230723788=<THINK>",
+              "expected": "5944318744431271906105436",
+              "answer": "759444928124",
+              "tail": "8: 3+1=4, digit 4, carry 0. Column 9: 7+2=9, digit 9, carry 0. Column 10: 1+4=5, digit 5, carry 0. Column 11: 7+0=7, digit 7, carry 0.</THINK>=759444928124<EOS>"
+            },
+            {
+              "prompt": "6439513850042878321088102+8661658684117866484754692=<THINK>",
+              "expected": "15101172534160744805842794",
+              "answer": "71721375101",
+              "tail": "0: 2+0=2, digit 2, carry 0. Column 11: 7+0=7, digit 7, carry 0. Column 10: 1+0=1, digit 1, carry 0. Column 10: 7+0=7, digit 7, carry 0.</THINK>=71721375101<EOS>"
+            }
+          ]
+        },
+        "30": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 2306.2,
+          "example_failures": [
+            {
+              "prompt": "878810509688941343322501113416+994899310882029197541894261547=<THINK>",
+              "expected": "1873709820570970540864395374963",
+              "answer": "915487986819",
+              "tail": ": 4+0=4, digit 4, carry 0. Column 11: 5+0=5, digit 5, carry 0. Column 10: 1+0=1, digit 1, carry 0. Column 10: 9+0=9, digit 9, carry 0.</THINK>=915487986819<EOS>"
+            },
+            {
+              "prompt": "812122302601716635473663620089+415899753766636069512871301377=<THINK>",
+              "expected": "1228022056368352704986534921466",
+              "answer": "78508900788",
+              "tail": "0: 0+0=0, digit 0, carry 0. Column 10: 5+0=5, digit 5, carry 0. Column 10: 8+0=8, digit 8, carry 0. Column 11: 7+0=7, digit 7, carry 0.</THINK>=78508900788<EOS>"
+            }
+          ]
+        },
+        "35": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 3059.2,
+          "example_failures": [
+            {
+              "prompt": "92439423679177127502391110899786508+35293080367348002361462358123988665=<THINK>",
+              "expected": "127732504046525129863853469023775173",
+              "answer": "939757948319",
+              "tail": ": 7+0=7, digit 7, carry 0. Column 10: 9+0=9, digit 9, carry 0. Column 11: 3+0=3, digit 3, carry 0. Column 10: 9+0=9, digit 9, carry 0.</THINK>=939757948319<EOS>"
+            },
+            {
+              "prompt": "52537589892705509938240377533613616+92560144102913989025326912792894906=<THINK>",
+              "expected": "145097733995619498963567290326508522",
+              "answer": "64589424296",
+              "tail": "10: 8+0=8, digit 8, carry 0. Column 10: 5+0=5, digit 5, carry 0. Column 9: 4+0=4, digit 4, carry 0. Column 11: 6+0=6, digit 6, carry 0.</THINK>=64589424296<EOS>"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "checkpoint": "checkpoints/baselines_18m/bpe50k_1d_rope_wordcot_philo50_12d.pt",
+      "model": "Standard (BPE Subword)",
+      "model_type": "standard",
+      "condition": 3,
+      "non_embedding_params": 18915328,
+      "block_size": 512,
+      "seed": 20261023,
+      "per_length": {
+        "4": {
+          "seen": true,
+          "correct": 21,
+          "n": 30,
+          "acc_pct": 70.0,
+          "wilson_ci_pct": [
+            52.1,
+            83.3
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 147.3,
+          "example_failures": [
+            {
+              "prompt": "4073+7690=<THINK>",
+              "expected": "11763",
+              "answer": "117633",
+              "tail": "lumn 1: 7+9=16, digit 6, carry 1. Column 2: 0+6 + carry 1=7, digit 7, carry 0. Column 3: 4+7=11, digit 1, carry 1. Column 4: carry 1 placed.</THINK>=117633<EOS>"
+            },
+            {
+              "prompt": "9068+7904=<THINK>",
+              "expected": "16972",
+              "answer": "169722",
+              "tail": "olumn 1: 6+0 + carry 1=7, digit 7, carry 0. Column 2: 0+9=9, digit 9, carry 0. Column 3: 9+7=16, digit 6, carry 1. Column 4: carry 1 placed.</THINK>=169722<EOS>"
+            }
+          ]
+        },
+        "8": {
+          "seen": true,
+          "correct": 18,
+          "n": 30,
+          "acc_pct": 60.0,
+          "wilson_ci_pct": [
+            42.3,
+            75.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 443.7,
+          "example_failures": [
+            {
+              "prompt": "60419092+19770149=<THINK>",
+              "expected": "80189241",
+              "answer": "78390141",
+              "tail": "1=9, digit 9, carry 0. Column 5: 4+9=13, digit 3, carry 1. Column 6: 0+7 + carry 1=8, digit 8, carry 0. Column 7: 6+1=7, digit 7, carry 0.</THINK>=78390141<EOS>"
+            },
+            {
+              "prompt": "78789085+15485252=<THINK>",
+              "expected": "94274337",
+              "answer": "946343737",
+              "tail": " Column 5: 7+8 + carry 1=16, digit 6, carry 1. Column 6: 8+5 + carry 1=14, digit 4, carry 1. Column 7: 7+1 + carry 1=9, digit 9, carry 0.</THINK>=946343737<EOS>"
+            }
+          ]
+        },
+        "12": {
+          "seen": true,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 10.2,
+          "example_failures": [
+            {
+              "prompt": "320623293553+963365697522=<THINK>",
+              "expected": "1283988991075",
+              "answer": "116958991075",
+              "tail": " Column 8: 6+3=9, digit 9, carry 0. Column 9: 0+6=6, digit 6, carry 0. Column 10: 2+9=11, digit 1, carry 1. Column 11: carry 1 placed.</THINK>=116958991075<EOS>"
+            },
+            {
+              "prompt": "738143325002+893800874452=<THINK>",
+              "expected": "1631944199454",
+              "answer": "167194419554",
+              "tail": "8+3=11, digit 1, carry 1. Column 9: 3+3 + carry 1=7, digit 7, carry 0. Column 10: 7+9=16, digit 6, carry 1. Column 11: carry 1 placed.</THINK>=167194419554<EOS>"
+            }
+          ]
+        },
+        "14": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 12.4,
+          "example_failures": [
+            {
+              "prompt": "23471143432908+17367459435862=<THINK>",
+              "expected": "40838602868770",
+              "answer": "1934752078",
+              "tail": "lumn 11: 4+0=4, digit 4, carry 0. Column 11: 3+0=3, digit 3, carry 0. Column 11: 9+0=9, digit 9, carry 0. Column 11: 1+0=1, digit 1, carry 0.</THINK>=1934752078"
+            },
+            {
+              "prompt": "30196866109598+43201691181956=<THINK>",
+              "expected": "73398557291554",
+              "answer": "8",
+              "tail": "t 4, carry 0. Column 11: 3+0=3, digit 3, carry 0. Column 10: 9+9=18, digit 8, carry 1. Column 11: 1+2 + carry 1=12, digit 2, carry 1. Column 11: 6+1 + carry 1=8"
+            }
+          ]
+        },
+        "16": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 12.2,
+          "example_failures": [
+            {
+              "prompt": "6735175463086154+2504380990058239=<THINK>",
+              "expected": "9239556453144393",
+              "answer": "98552365839",
+              "tail": " carry 1=5, digit 5, carry 0. Column 8: 5+0=5, digit 5, carry 0. Column 9: 3+5=8, digit 8, carry 0. Column 10: 7+2=9, digit 9, carry 0.</THINK>=98552365839<EOS>"
+            },
+            {
+              "prompt": "8800841117855161+9099450814205263=<THINK>",
+              "expected": "17900291932060424",
+              "answer": "178108716201",
+              "tail": "0+0 + carry 1=1, digit 1, carry 0. Column 10: 8+0=8, digit 8, carry 0. Column 11: 8+9=17, digit 7, carry 1. Column 11: carry 1 placed.</THINK>=178108716201<EOS>"
+            }
+          ]
+        },
+        "18": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 15.8,
+          "example_failures": [
+            {
+              "prompt": "775409140248344675+273300633130281266=<THINK>",
+              "expected": "1048709773378625941",
+              "answer": "188229934222",
+              "tail": " placed. Column 11: carry 1 placed. Column 11: carry 1 placed. Column 9: 7+0 + carry 1=8, digit 8, carry 0. Column 11: carry 1 placed.</THINK>=188229934222<EOS>"
+            },
+            {
+              "prompt": "586372270871392616+532943463611048115=<THINK>",
+              "expected": "1119315734482440731",
+              "answer": "138931864456",
+              "tail": "6+2 + carry 1=9, digit 9, carry 0. Column 10: 5+3=8, digit 8, carry 0. Column 11: 8+5=13, digit 3, carry 1. Column 11: carry 1 placed.</THINK>=138931864456<EOS>"
+            }
+          ]
+        },
+        "20": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 13.6,
+          "example_failures": [
+            {
+              "prompt": "64012498003866726193+44789680393999591374=<THINK>",
+              "expected": "108802178397866317567",
+              "answer": "68489248477",
+              "tail": "n 7: 1+7=8, digit 8, carry 0. Column 8: 0+4=4, digit 4, carry 0. Column 9: 4+4=8, digit 8, carry 0. Column 10: 6+0=6, digit 6, carry 0.</THINK>=68489248477<EOS>"
+            },
+            {
+              "prompt": "77837753062989223770+41066777891363461479=<THINK>",
+              "expected": "118904530954352685249",
+              "answer": "170188757301",
+              "tail": "rry 1 placed. Column 11: 9+0 + carry 1=10, digit 0, carry 1. Column 10: 7+9 + carry 1=17, digit 7, carry 1. Column 11: carry 1 placed.</THINK>=170188757301<EOS>"
+            }
+          ]
+        },
+        "25": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 0,
+          "elapsed_sec": 18.5,
+          "example_failures": [
+            {
+              "prompt": "1730960225679664675381648+4213358518751607230723788=<THINK>",
+              "expected": "5944318744431271906105436",
+              "answer": "17917731339",
+              "tail": "1: 1+0=1, digit 1, carry 0. Column 11: 9+0=9, digit 9, carry 0. Column 10: 7+0=7, digit 7, carry 0. Column 10: 1+0=1, digit 1, carry 0.</THINK>=17917731339<EOS>"
+            },
+            {
+              "prompt": "6439513850042878321088102+8661658684117866484754692=<THINK>",
+              "expected": "15101172534160744805842794",
+              "answer": "19719851284",
+              "tail": " Column 11: 2+0=2, digit 2, carry 0. Column 11: 7+0=7, digit 7, carry 0. Column 11: 9+0=9, digit 9, carry 0. Column 11: carry 1 placed.</THINK>=19719851284<EOS>"
+            }
+          ]
+        },
+        "30": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 19,
+          "elapsed_sec": 21.7,
+          "example_failures": [
+            {
+              "prompt": "878810509688941343322501113416+994899310882029197541894261547=<THINK>",
+              "expected": "1873709820570970540864395374963",
+              "answer": "171958987737",
+              "tail": " Column 10: 9+0=9, digit 9, carry 0. Column 9: 1+0=1, digit 1, carry 0. Column 11: 7+0=7, digit 7, carry 0. Column 11: carry 1 placed.</THINK>=171958987737<EOS>"
+            },
+            {
+              "prompt": "812122302601716635473663620089+415899753766636069512871301377=<THINK>",
+              "expected": "1228022056368352704986534921466",
+              "answer": "171212261459",
+              "tail": " Column 11: 2+0=2, digit 2, carry 0. Column 11: 1+0=1, digit 1, carry 0. Column 9: 7+0=7, digit 7, carry 0. Column 11: carry 1 placed.</THINK>=171212261459<EOS>"
+            }
+          ]
+        },
+        "35": {
+          "seen": false,
+          "correct": 0,
+          "n": 30,
+          "acc_pct": 0.0,
+          "wilson_ci_pct": [
+            0.0,
+            11.4
+          ],
+          "context_truncated": 23,
+          "elapsed_sec": 22.9,
+          "example_failures": [
+            {
+              "prompt": "92439423679177127502391110899786508+35293080367348002361462358123988665=<THINK>",
+              "expected": "127732504046525129863853469023775173",
+              "answer": "<THINK>Column 0: 9+ into its inquiries by meansrerererere adequate immediate app",
+              "tail": " pure\nunderstanding, and a transcendental sphere of thought, expect no,\nthen, to give way to transcendental philosophy, the question is\nonly given; a dogmatical"
+            },
+            {
+              "prompt": "52537589892705509938240377533613616+92560144102913989025326912792894906=<THINK>",
+              "expected": "145097733995619498963567290326508522",
+              "answer": "<THINK>Column 0: 3+5 does notrerererererererererererererereceptpossess knowledge",
+              "tail": " part of\nexperience, and whether it be given by means of it something, or\ngiven, we do not possess a no \u00e0 priori knowledge of such a kind,\nas a formal condition"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
