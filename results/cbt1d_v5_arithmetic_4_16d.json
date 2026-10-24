@@ -1,0 +1,108 @@
+{
+  "checkpoint": "checkpoints/cbt/cbt_18m_1d_rope_R3_k45_sftv5.pt",
+  "max_train_operand_digits": 25,
+  "arithmetic": {
+    "per_length": {
+      "4": {
+        "digits": 4,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 2.36
+      },
+      "8": {
+        "digits": 8,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 5.07
+      },
+      "12": {
+        "digits": 12,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 29,
+        "exact_ci": [
+          83.3,
+          99.4
+        ],
+        "think_exact": 29,
+        "think_ci": [
+          83.3,
+          99.4
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 6.85
+      },
+      "14": {
+        "digits": 14,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 7.7
+      },
+      "16": {
+        "digits": 16,
+        "mode": "teacher_forced",
+        "seen_in_training": true,
+        "n": 30,
+        "exact": 30,
+        "exact_ci": [
+          88.6,
+          100.0
+        ],
+        "think_exact": 30,
+        "think_ci": [
+          88.6,
+          100.0
+        ],
+        "gen_tokens": 0,
+        "elapsed_sec": 9.19
+      }
+    },
+    "summary": {
+      "seen": {
+        "n": 150,
+        "exact": 149,
+        "exact_ci": [
+          96.3,
+          99.9
+        ]
+      }
+    }
+  }
+}

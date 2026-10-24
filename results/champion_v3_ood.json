@@ -1,0 +1,17 @@
+{
+  "checkpoint": "champion_model/checkpoints/champion_v3_final.zip",
+  "max_train_operand_digits": 25,
+  "ood": {
+    "total": 18,
+    "routed": 18,
+    "routing_ci": [
+      82.4,
+      100.0
+    ],
+    "exact_matches": 18,
+    "exact_ci": [
+      82.4,
+      100.0
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "checkpoint": "champion_model/checkpoints/1d/cbt_18m_1d_rope_R3_k45_sftv5.zip",
+  "max_train_operand_digits": 25,
+  "phrasing": {
+    "total": 26,
+    "routing_passed": 25,
+    "routing_ci": [
+      81.1,
+      99.3
+    ],
+    "exact_args_passed": 25,
+    "exact_args_ci": [
+      81.1,
+      99.3
+    ]
+  }
+}
