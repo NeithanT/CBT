@@ -14,20 +14,22 @@
 
 We study whether a small autoregressive character-level language model can extrapolate column-aligned multi-digit integer addition beyond the digit lengths seen in training when provided with rule-assigned two-dimensional (2D) coordinates $(p, \tau)$.
 
-Small autoregressive Transformers trained from scratch on 1–12 digit addition with 1D Rotary Position Embeddings (1D-RoPE) fall to **0.0% accuracy** on unseen 18- to 20-digit sums (after scoring 4.6–18.7% on moderate 14–16 digit extrapolation). In **Character-Based Transformer (CBT)**, tokens are atomic ASCII characters plus 14 structural control tags positioned on a 2D coordinate grid $(p, \tau)$ via **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** and **Weight-Tied Recurrent Depth ($R = 3$)** (where our 100k factor ablation indicates that 2D coordinates account for the length-generalization gain while recurrence provides no measurable benefit for addition).
+Small autoregressive Transformers trained from scratch on 1–12 digit addition with 1D Rotary Position Embeddings (1D-RoPE) score **0/30 at every unseen length** from 14 to 35 digits (and fail at 12 digits, the edge of their training range, with a character vocabulary); alternative architectures do the same or did not fit the task. In **Character-Based Transformer (CBT)**, tokens are atomic ASCII characters plus 14 structural control tags positioned on a 2D coordinate grid $(p, \tau)$ via **Decoupled 2D Rotary Position Embeddings (2D-RoPE)** and **Weight-Tied Recurrent Depth ($R = 3$)** (where our 100k factor ablation indicates that 2D coordinates account for the length-generalization gain while recurrence provides no measurable benefit for addition).
 
 ### Key Results Matrix (Greedy Decoding)
 
-| Architecture | Total Params | Effective Depth | In-Dist (1–12/15d) | Unseen 16–40d Random ($n=180$) | Unseen 16–50d Random ($n=240$) | 50-Digit Cascade ($99\dots99 + 1$) | Multi-Tool Routing |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Standard Transformer (1D-RoPE)** | 18.91M | 6 layers | 98.4% (1–12d) | 0.0% (18–20d) | N/A (512-tok limit) | N/A (512-tok limit) | N/A |
-| **HRM-RoPE (Decoupled 2D-RoPE)** | 1.56M | 8 cycles | 100.0% (1–12d) | 100.0% (18–20d) | N/A (512-tok limit) | 100.0% (20d) | N/A |
-| **CBT-100k ($L=2, R=3$)** | 100,672 | 6 layers (unrolled) | 100.0% (1–12d) | 100.0% (14–20d) | N/A (512-tok limit) | 100.0% (20d) | N/A |
-| **CBT-200k ($L=4, R=3$)** | 197.8k | 12 layers (unrolled) | 100.0% (1–12d) | 100.0% (14–20d) | N/A (512-tok limit) | 100.0% (20d) | 100.0% (50/50) |
-| **CBT-18.95M (`champion_final.pt`)** | **18.95M** | **18 layers (unrolled)** | **98.9% (89/90, 8–15d)** | **100.0% (180/180)** | **100.0% (240/240)** | **100.0% (18/18 Struct)** | **80.8% (21/26) / 100% OOD routing** |
+| Model | Non-embedding params | 4-8 digits (seen) | 12 digits (longest trained) | 14-25 digits (unseen) | 30-35 digits (unseen) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **1D-RoPE character baseline** (`char_1d_rope_scratchpad_12d.pt`) | 18.9M | 60/60 | 0/30 | 0/150 | 0/60 |
+| **2D-RoPE small model** (`hrm_2d_rope_k32_12d.pt`) | 1.57M | 60/60 | 30/30 | 150/150 | 47/60 |
+| **CBT-18.95M** (V5 model, `cbt_18m_2d_rope_R3_k45_sftv5.pt`, HF: `champion_final.pt`) | 18.9M | 60/60 | 30/30 | 120/120 | 60/60 |
+| **1D-RoPE twin of CBT-18.95M** (`cbt_18m_1d_rope_R3_k45_sftv5.pt`) | 18.9M | 60/60 | 29/30 | 117/120 | 0/60 |
 
-- **Shift-Masking Horizon ($p_{\max} = 25 + k = 25 + 45 = 70$)**: Across the 315-problem random multi-carry sweep from 16 to 100 digits (`benchmarks/evaluate_random_16_to_100d.py`), **CBT-18.95M** achieves **100.0% (180/180; 95% Wilson CI `[97.9, 100.0]%`)** across 16–40 digits, **100.0% (60/60)** at 45–50 digits, and **100.0% (20/20)** at 55 digits. Accuracy then falls to **70.0%** at 60 digits, **40.0%** at 70 digits, and **0.0%** at 80–100 digits. The 60-digit errors occur before $p$ reaches $p_{\max}$, so the horizon is approximate for champion.
-- **Zero-Shot OOD Tool Calling**: On 18 fresh OOD prompts, CBT-18.95M routes **100.0% (18/18)** to the intended tool and copies **55.6% (10/18)** of arguments with exact character match.
+Rows 1-2: free-running greedy decoding, exact final answer, 30 random problems per length (14-25 digits: lengths 14, 16, 18, 20, 25). Rows 3-4: teacher-forced greedy agreement with the gold scratchpad and answer (the condition for free-running greedy decoding to reproduce it), 30 problems per length (14-25 digits: lengths 14, 16, 20, 25). Results are in `results/baseline_rerun/`, `results/champion_v3_*.json` and `results/cbt1d_v5_*.json`. Other baselines (BPE, looped, hierarchical, hybrid, H-NRM, ALSM) are in the paper's Tables 1-2.
+
+- **Length generalization (V5 model, $p_{\max} = 25 + k = 70$)**: teacher-forced, 30 problems per length. **150/150** at 4-16 digits, **60/60** at 20-25 (seen), **210/210** at 26-55 digits (unseen, 95% Wilson CI `[98.2, 100.0]%`), **25/30** at 60 and **19/30** at 70 digits (pooled 26-70: **254/270**). The remaining failures are local carry or digit errors at columns 59-70 of uniform sums; every cascade and dense-carry sum at 55-70 digits is exact. Traces for 80 or more digits exceed the 1,024-token context.
+- **Tool use (V5 model)**: **26/26** exact calls on the phrasing suite, **18/18** on the OOD suite, **30/30** exact copies of entities absent from the training corpus. The V5 data was broadened after the previous model's failures on the first two suites were seen, so the unseen-30 set is the cleaner evidence.
+- **1D-RoPE control (same architecture, V5 data and steps)**: on 26-70 digits the 2D model scores **254/270** and the 1D twin **0/270** (it fails from column 1 of the scratchpad); on tool use they are equal (74/74 vs 73/74 exact calls). So the 2D coordinates account for the arithmetic extrapolation, not for the tool-use results. Details: `results/cbt_2d_vs_1d_rope_ablation_report.md` and `results/champion_v3_performance_report.md`.
 
 ---
 
@@ -40,7 +42,7 @@ The repository champion model is **Character Based Transformer (CBT)** (~18.95M 
 - **Physical Layers**: L = 6
 - **Recurrent Passes**: R = 3 (Effective Depth = 18 layers)
 - **Positional Bias**: Decoupled 2D-RoPE with selective coordinate shifting
-- **Training Trajectory**: Pretrained on 247.3M tokens (loss `0.000094`), followed by 2-stage Supervised Fine-Tuning (SFT) for 1-hop induction copy and tool routing.
+- **Training Trajectory**: pretraining on 1-15-digit addition and tool dialogues, search-copy and all-tools SFT, V4 SFT (12,000 steps), then V5 SFT (23,927 steps; decontaminated stream with arithmetic replay of 1-25 digits). The released weights are the V5 model. The previous V4 checkpoint is `checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv4.pt`.
 
 ### Model Weights on Hugging Face
 
@@ -52,7 +54,7 @@ The trained model checkpoint (`champion_final.pt`, ~75.8 MB) is available on Hug
 To download and place the weights locally:
 ```bash
 # Using huggingface_hub
-python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='Neithanvarvas/CBT', filename='champion_final.pt', local_dir='champion_model/scaled_t4/checkpoints')"
+.venv/bin/python benchmarks/download_from_hf.py  # saves checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt
 ```
 
 ---
@@ -206,7 +208,7 @@ python benchmarks/download_from_hf.py
 
 **Method C: Hugging Face Python SDK**
 ```bash
-python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='Neithanvarvas/CBT', filename='champion_final.pt', local_dir='champion_model/scaled_t4/checkpoints')"
+.venv/bin/python benchmarks/download_from_hf.py  # saves checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt
 ```
 
 ### 2. Pushing New Weights to Hugging Face
@@ -246,7 +248,7 @@ If you use this codebase or architecture in your research, please cite:
 
 ```bibtex
 @article{vargas2026attention,
-  title={Attention Is Not All You Need for AGI: Empirical Limits of Pure Self-Attention on Algorithmic Length Generalization},
+  title={From Digits to Characters: Two-Dimensional Rotary Coordinates for Length Generalization in a Compact Character-Level Transformer},
   author={Vargas, Neithan},
   year={2026}
 }
