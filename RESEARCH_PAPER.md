@@ -18,7 +18,7 @@ Small Transformers trained from scratch learn multi-digit addition within their 
 
 **Our contributions** are:
 
-- A re-evaluation of seven 1D-position checkpoints (standard, BPE and alternative architectures) on a common random-sum benchmark. None of them solves any unseen length.
+- A re-evaluation of six 1D-position checkpoints (standard, BPE and alternative architectures) on a common random-sum benchmark. None of them solves any unseen length.
 - Evidence from controlled ablations that 2D place-value coordinates are the factor that enables extrapolation, and that the extrapolation limit is set by the trained coordinate range (Section 6).
 - CBT-18.95M, an 18.9M-parameter character model that combines exact addition at lengths up to 55 digits (trained on at most 25) with tool calling and entity copying (Sections 8-9).
 - A matched 1D-RoPE twin of CBT-18.95M, which shows that the 2D coordinates account for the arithmetic extrapolation (254/270 against 0/270 on unseen lengths) and not for the tool-use results (Section 10).
@@ -45,7 +45,7 @@ with $c_{-1}=0$. The same 200-entry transition table applies at every column, so
 
 **Scratchpad format.** Character models are trained on `A+B=<THINK>` followed by one block `(c+a+b)=c's` per column, from the units column up, then `</THINK>=S`. For example, `47+85=<THINK>(0+7+5)=12(1+4+8)=13</THINK>=132`. BPE models use the same steps in words (`Column 0: 7+5=12, digit 2, carry 1. ...`). The loss is masked on the prompt `A+B=`.
 
-**Benchmark.** For each length $d$ we draw 30 problems with two $d$-digit operands from a stratified generator: 70% uniform random digits, 15% dense carries (all digits 5-9), and 15% long carry cascades. Decoding is greedy. A problem counts as correct only if the answer after `</THINK>=` matches the true sum exactly. We report $k/n$ with 95% Wilson intervals. Lengths inside the training range are labelled *seen*. Baseline traces up to 35 digits fit in their 512-token context, so truncation does not explain the failures below, with two exceptions noted where they occur: the place-value variant (Section 5) and the philosophy-mixed BPE model (Section 4).
+**Benchmark.** For each length $d$ we draw 30 problems with two $d$-digit operands from a stratified generator: 70% uniform random digits, 15% dense carries (all digits 5-9), and 15% long carry cascades. Decoding is greedy. A problem counts as correct only if the answer after `</THINK>=` matches the true sum exactly. We report $k/n$ with 95% Wilson intervals. Lengths inside the training range are labelled *seen*. Baseline traces up to 35 digits fit in their 512-token context, so truncation does not explain the failures below, with one exception noted where it occurs: the philosophy-mixed BPE model (Section 4).
 
 ## 4. Step 1: A Standard Language Model Does Not Extrapolate
 
@@ -65,8 +65,6 @@ Table 1 shows the 18.9M-parameter baselines ($L=6$, $d_{\text{model}}=512$, 8 he
 ## 5. Step 2: Other Architectures Do Not Fix It
 
 We trained three other architectures on the same data and budget (Table 2): a looped Transformer that reuses two blocks six times [9, 10], a hierarchical fast/slow recurrent model, and a hybrid of gated linear recurrence and attention. The looped, hierarchical and hybrid models behave like the plain Transformer: 30/30 at 4 and 8 digits, 0/30 at 12 and at every longer length. Recurrence and hierarchy do not make a flat index generalize.
-
-A fourth baseline, a place-value variant trained with group relative policy optimization, scored 0/30 at every length. Its training traces were stored without line separators because the character vocabulary has no newline token in that format, so the terms ran together (`100050002006003070102`); we do not interpret this result.
 
 **Table 2.** Alternative architectures do not extrapolate. Same protocol and training data as Table 1; correct answers out of 30. Parameters are non-embedding. The last row is the 2D model of Section 6, shown for comparison.
 

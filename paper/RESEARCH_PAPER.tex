@@ -66,7 +66,7 @@ Small Transformers trained from scratch learn multi-digit addition within their 
 
 \textbf{Our contributions} are:
 \begin{itemize}
-\item A re-evaluation of seven 1D-position checkpoints (standard, BPE and alternative architectures) on a common random-sum benchmark. None of them solves any unseen length.
+\item A re-evaluation of six 1D-position checkpoints (standard, BPE and alternative architectures) on a common random-sum benchmark. None of them solves any unseen length.
 \item Evidence from controlled ablations that 2D place-value coordinates are the factor that enables extrapolation, and that the extrapolation limit is set by the trained coordinate range (Section~\ref{sec:step3}).
 \item CBT-18.95M, an 18.9M-parameter character model that combines exact addition at lengths up to 55 digits (trained on at most 25) with tool calling and entity copying (Sections~\ref{sec:cbt}--\ref{sec:results}).
 \item A matched 1D-RoPE twin of CBT-18.95M, which shows that the 2D coordinates account for the arithmetic extrapolation (254/270 against 0/270 on unseen lengths) and not for the tool-use results (Section~\ref{sec:control}).
@@ -127,7 +127,7 @@ with $c_{-1}=0$. The same 200-entry transition table applies at every column, so
 
 \textbf{Scratchpad format.} Character models are trained on \texttt{A+B=<THINK>} followed by one block \texttt{(c+a+b)=c's} per column, from the units column up, then \texttt{</THINK>=S}. For example, \texttt{47+85=<THINK>(0+7+5)=12(1+4+8)=13</THINK>=132}. BPE models use the same steps in words (\texttt{Column 0: 7+5=12, digit 2, carry 1. ...}). The loss is masked on the prompt \texttt{A+B=}.
 
-\textbf{Benchmark.} For each length $d$ we draw 30 problems with two $d$-digit operands from a stratified generator: 70\% uniform random digits, 15\% dense carries (all digits 5--9), and 15\% long carry cascades. Decoding is greedy. A problem counts as correct only if the answer after \texttt{</THINK>=} matches the true sum exactly. We report $k/n$ with 95\% Wilson intervals. Lengths inside the training range are labelled \emph{seen}. Baseline traces up to 35 digits fit in their 512-token context, so truncation does not explain the failures below, with two exceptions noted where they occur: the place-value variant (Section~\ref{sec:step2}) and the philosophy-mixed BPE model (Section~\ref{sec:step1}).
+\textbf{Benchmark.} For each length $d$ we draw 30 problems with two $d$-digit operands from a stratified generator: 70\% uniform random digits, 15\% dense carries (all digits 5--9), and 15\% long carry cascades. Decoding is greedy. A problem counts as correct only if the answer after \texttt{</THINK>=} matches the true sum exactly. We report $k/n$ with 95\% Wilson intervals. Lengths inside the training range are labelled \emph{seen}. Baseline traces up to 35 digits fit in their 512-token context, so truncation does not explain the failures below, with one exception noted where it occurs: the philosophy-mixed BPE model (Section~\ref{sec:step1}).
 
 \section{Step 1: A Standard Language Model Does Not Extrapolate}\label{sec:step1}
 
@@ -157,8 +157,6 @@ BPE 50k, 50\% philosophy text & 18.9M & 21 & 18 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 
 \section{Step 2: Other Architectures Do Not Fix It}\label{sec:step2}
 
 We trained three other architectures on the same data and budget (Table~\ref{tab:step2}): a looped Transformer that reuses two blocks six times \cite{dehghani2019universal,giannou2023looped}, a hierarchical fast/slow recurrent model, and a hybrid of gated linear recurrence and attention. The looped, hierarchical and hybrid models behave like the plain Transformer: 30/30 at 4 and 8 digits, 0/30 at 12 and at every longer length. Recurrence and hierarchy do not make a flat index generalize.
-
-A fourth baseline, a place-value variant trained with group relative policy optimization, scored 0/30 at every length. Its training traces were stored without line separators because the character vocabulary has no newline token in that format, so the terms ran together (\texttt{100050002006003070102}); we do not interpret this result.
 
 \begin{table*}[!t]
 \centering
