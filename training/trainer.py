@@ -13,7 +13,7 @@ from typing import Tuple, List, Optional, Any, Dict
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import LambdaLR
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT_DIR, "src"))
@@ -252,6 +252,7 @@ def get_training_arg_parser(description: str) -> argparse.ArgumentParser:
     parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
     parser.add_argument("--weight_decay", type=float, default=0.1, help="Weight decay")
     parser.add_argument("--grad_clip", type=float, default=1.0, help="Gradient clipping norm")
+    parser.add_argument("--warmup_steps", type=int, default=0, help="Linear LR warmup steps before the cosine decay (0 keeps the original schedule)")
     parser.add_argument("--n_layer", type=int, default=6, help="Transformer layers")
     parser.add_argument("--n_head", type=int, default=8, help="Attention heads")
     parser.add_argument("--n_embd", type=int, default=512, help="Embedding dimension")
@@ -470,7 +471,16 @@ def train_condition(condition: int, args: Optional[argparse.Namespace] = None):
     is_alsm = (model_type in ["alsm", "abacus_looped", "micromath", "micromath2m"])
     model = wrap_model_ddp(raw_model, device, local_rank)
     optimizer = AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=args.weight_decay)
-    scheduler = CosineAnnealingLR(optimizer, T_max=max(1, total_target_steps), eta_min=args.lr * 0.1)
+    warmup_steps = max(0, getattr(args, "warmup_steps", 0))
+    cosine_steps = max(1, total_target_steps - warmup_steps)
+
+    def lr_scale(step: int) -> float:
+        if step < warmup_steps:
+            return (step + 1) / warmup_steps
+        progress = min(1.0, (step - warmup_steps) / cosine_steps)
+        return 0.1 + 0.9 * 0.5 * (1.0 + math.cos(math.pi * progress))
+
+    scheduler = LambdaLR(optimizer, lr_lambda=lr_scale)
     AutocastCtx, scaler = get_amp_components(device, enabled=args.use_amp)
 
     if is_master:

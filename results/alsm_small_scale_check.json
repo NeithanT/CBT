@@ -1,0 +1,40 @@
+{
+  "description": "Scaled-down ALSM (n_embd=128, 2 core blocks, 3 loops, no dropout, AdamW lr 1e-3, batch 64, 1-6 digit sums, FP32 CPU), post-prompt next-character accuracy on 200 fresh sums at shift 0. Produced by experiments/alsm_small_scale_check.py; numbers copied from the run logs.",
+  "runs": [
+    {
+      "k_rand_shift": 0,
+      "steps": 600,
+      "final_train_loss": 0.0106,
+      "post_prompt_next_char_acc": 0.997
+    },
+    {
+      "k_rand_shift": 8,
+      "steps": 1200,
+      "loss_at_step_1050": 0.0012,
+      "final_train_loss": 0.6659,
+      "post_prompt_next_char_acc": 0.817,
+      "note": "loss spiked at the last logged step"
+    },
+    {
+      "k_rand_shift": 32,
+      "steps": 1200,
+      "final_train_loss": 0.0021,
+      "post_prompt_next_char_acc": 1.0
+    }
+  ],
+  "full_size_checkpoint": {
+    "checkpoint": "checkpoints/architectures_char/alsm_looped4x6_abacus_k32_12d.pt",
+    "post_prompt_next_char_acc_with_place_ids": {
+      "2_digits": 0.594,
+      "4_digits": 0.472,
+      "8_digits": 0.315
+    },
+    "post_prompt_next_char_acc_zero_place_ids": {
+      "2_digits": 0.789,
+      "4_digits": 0.667,
+      "8_digits": 0.629
+    },
+    "sums_per_cell": 24,
+    "loops": 6
+  }
+}

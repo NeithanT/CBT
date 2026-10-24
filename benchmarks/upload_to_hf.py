@@ -37,40 +37,70 @@ metrics:
 - accuracy
 ---
 
-# 2D Embeddings for Length Generalization in Character-Based Transformers (CBT)
+# CBT-18.95M: a character-level Transformer with two-dimensional rotary coordinates
 
-- **GitHub Repository**: [https://github.com/NeithanT/CBT](https://github.com/NeithanT/CBT)
-- **Research Paper**: [RESEARCH_PAPER.md](https://github.com/NeithanT/CBT/blob/main/RESEARCH_PAPER.md)
+- **GitHub**: [github.com/NeithanT/CBT](https://github.com/NeithanT/CBT)
+- **Paper** (PDF, equations render): [RESEARCH_PAPER.pdf](RESEARCH_PAPER.pdf) | Markdown: [RESEARCH_PAPER.md](RESEARCH_PAPER.md)
 
-## 1. Model Overview
+## 1. Overview
 
-**Character-Based Transformer (CBT-18.95M)** is an 18.94M-parameter character-level Transformer (111-token vocabulary) whose tokens carry a rule-assigned two-dimensional coordinate $(p, \\tau)$ used by **Decoupled 2D Rotary Position Embeddings (2D-RoPE)**, with weight-tied recurrent depth ($R = 3$). This release (`champion_final.pt`) is the model after supervised fine-tuning: pretraining, search-copy and all-tools fine-tuning, an intermediate 12,000-step round, then a final 23,927-step round on a decontaminated online stream (35% search copy, 20% arithmetic replay of 1-25 digits, the rest multi-tool and chat). Coordinate shift masking uses $k=45$, so $p_{\\max} = 25 + 45 = 70$.
+**CBT-18.95M** is an 18.94M-parameter character-level Transformer with a 111-token vocabulary. Every token carries a rule-assigned two-dimensional coordinate (p, tau): p is the decimal place (or the dialogue segment) and tau is the step within it. Decoupled 2D Rotary Position Embeddings (2D-RoPE) rotate half of each attention head by p and half by tau. The six physical layers are applied three times with shared weights (effective depth 18). Random coordinate shift masking with k = 45 gives a coordinate horizon of p_max = 25 + 45 = 70.
 
-Results (greedy decoding; Wilson 95% CIs are in the paper and in `results/`):
-- **Addition**, 30 random problems per length (70% uniform, 15% dense carry, 15% cascades), scored as teacher-forced greedy agreement with the gold scratchpad and answer: **150/150** at 4-16 digits, **60/60** at 20 and 25 digits (seen), **210/210** at 26-55 digits (unseen), **25/30** at 60 and **19/30** at 70 digits. Pooled over the unseen 26-70 digits: **254/270**.
-- **Tool use**: **26/26** exact calls on a 26-prompt phrasing suite, **18/18** on 18 out-of-distribution prompts, and **30/30** exact copies of entities absent from the training corpus (unseen-30). The final fine-tuning data was broadened after the intermediate model's failures on the first two suites were seen, so the unseen-30 set is the cleaner evidence.
-- **1D-RoPE control**: a twin with the same architecture, data and step count but standard 1D-RoPE scores **0/270** at 26-70 digits and **73/74** exact tool calls. The 2D coordinates account for the arithmetic extrapolation, not for the tool-use results.
-- **Baselines**: standard 1D-RoPE models trained on 1-12 digit sums score 0/30 at every length from 14 to 35 digits (character and BPE vocabularies; looped, hierarchical and hybrid variants too).
+This release (`champion_final.pt`) is the model after supervised fine-tuning: pretraining, search-copy and all-tools fine-tuning, an intermediate 12,000-step round, then a final 23,927-step round on a decontaminated online stream (35% search copy, 20% arithmetic replay of 1-25 digits, the rest multi-tool and chat).
 
-All results are single training runs. Details, limitations and the failure analysis are in the paper.
+**Main finding.** A matched 1D-RoPE twin (same architecture, data and step count) cannot add sums longer than its training maximum, while CBT-18.95M can. Tool routing and entity copying are the same for both, so they come from the training data, not from the layout.
+
+## 2. Results
+
+Greedy decoding. Addition: 30 random problems per length (70% uniform, 15% dense carries, 15% cascades), scored as teacher-forced greedy agreement with the gold scratchpad and answer. Training covers 1-25 digits.
+
+**Addition: CBT-18.95M (2D-RoPE) against its 1D-RoPE twin**
+
+| Operand digits | Status | CBT-18.95M (2D) | 1D-RoPE twin |
+| :--- | :--- | :---: | :---: |
+| 4, 8, 12, 14, 16 | seen | 150/150 | 149/150 |
+| 20, 25 | seen | 60/60 | 57/60 |
+| 26 | unseen (+1) | 30/30 | 0/30 |
+| 30, 35, 40, 45, 50, 55 | unseen | 180/180 | 0/180 |
+| 60 | unseen | 25/30 | 0/30 |
+| 70 | unseen | 19/30 | 0/30 |
+| **26-70 pooled** | unseen | **254/270** | **0/270** |
+
+**Tool use (exact calls)**
+
+| Suite | Prompts | CBT-18.95M (2D) | 1D-RoPE twin |
+| :--- | :---: | :---: | :---: |
+| Phrasing | 26 | 26 | 25 |
+| Out-of-distribution entities | 18 | 18 | 18 |
+| Unseen-entity copy | 30 | 30 | 30 |
+
+The fine-tuning data was broadened after an earlier model's failures on the phrasing and OOD suites were seen, so the unseen-entity set (entities absent from every training corpus) is the cleaner evidence.
+
+**Baselines trained on 1-12 digit sums with standard 1D-RoPE** (correct answers out of 30)
+
+| Model | 4 digits | 8 digits | 12 digits | 14-35 digits |
+| :--- | :---: | :---: | :---: | :---: |
+| 18.9M character model | 30 | 30 | 0 | 0 at every length |
+| 18.9M BPE model (word-level scratchpad) | 30 | 30 | 14 | 0 at every length |
+
+All results are single training runs with small test sets. Details, limitations and the failure analysis are in the paper.
 
 ---
 
-## 2. Model Specifications
+## 2b. Model Specifications
 
 | Parameter | Specification |
 | :--- | :--- |
-| **Total Parameters** | 18,944,512 |
-| **Non-Embedding Parameters** | 18,887,680 |
-| **Physical Layers (L)** | 6 |
-| **Recurrent Passes (R)** | 3 (effective depth 18) |
-| **Hidden Dimension** | 512 |
-| **Attention Heads** | 8 (head dimension 64) |
-| **Context** | 1024 tokens |
-| **Positional Embedding** | Decoupled 2D-RoPE (half of each head rotated by place $p$, half by step $\\tau$; rule-assigned) |
-| **Coordinate Shift Masking** | $k = 45$ |
-| **Vocabulary** | 111 (14 control tokens + 97 characters) |
-| **Weight Tying** | input embedding = output projection |
+| Total parameters | 18,944,512 |
+| Non-embedding parameters | 18,887,680 |
+| Physical layers | 6 (applied 3 times, effective depth 18) |
+| Hidden dimension | 512 |
+| Attention heads | 8 (head dimension 64) |
+| Context | 1024 tokens |
+| Positional embedding | Decoupled 2D-RoPE (half of each head rotated by place p, half by step tau; rule-assigned) |
+| Coordinate shift masking | k = 45 |
+| Vocabulary | 111 (14 control tokens + 97 characters) |
+| Weight tying | input embedding = output projection |
 
 ---
 
@@ -100,7 +130,7 @@ python interactive.py --ckpt champion_final.pt
 
 ## 4. Files
 
-`champion_final.pt`, source files for stand-alone execution, `RESEARCH_PAPER.md`, and the evaluation results in JSON.
+`champion_final.pt`, source files for stand-alone execution, the paper (`RESEARCH_PAPER.pdf`, `RESEARCH_PAPER.md`), and the evaluation results in JSON.
 
 ---
 
@@ -108,7 +138,7 @@ python interactive.py --ckpt champion_final.pt
 
 ```bibtex
 @article{vargas2026cbt,
-  title={2D Embeddings for Length Generalization in Character-Based Transformers (CBT)},
+  title={From Digits to Characters: Two-Dimensional Rotary Coordinates for Length Generalization in a Compact Character-Level Transformer},
   author={Vargas Vargas, Neithan},
   year={2026}
 }
@@ -164,6 +194,7 @@ def main():
         # 4. Copy research paper and evaluation results
         extra_files = {
             "RESEARCH_PAPER.md": "RESEARCH_PAPER.md",
+            "RESEARCH_PAPER.pdf": "RESEARCH_PAPER.pdf",
             "results/champion_v3_arithmetic.json": "cbt_2d_arithmetic_20_70d.json",
             "results/champion_v3_arithmetic_4_16d.json": "cbt_2d_arithmetic_4_16d.json",
             "results/champion_v3_phrasing.json": "cbt_2d_phrasing.json",

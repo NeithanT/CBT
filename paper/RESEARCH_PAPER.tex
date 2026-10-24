@@ -64,7 +64,58 @@ Small Transformers trained from scratch learn multi-digit addition within their 
 \item \textbf{A 1D control.} To find out which results the layout is responsible for, we trained a twin with standard 1D-RoPE on identical data. It does not extrapolate, but it matches the 2D model on tool use (Section~\ref{sec:control}).
 \end{enumerate}
 
-\textbf{Contributions.} (i) A re-evaluation of nine 1D-position checkpoints (standard, BPE and alternative architectures) on a common random-sum benchmark, none of which solves any unseen length. (ii) Evidence from controlled ablations that 2D place-value coordinates are the factor that enables extrapolation, and that the extrapolation limit is set by the trained coordinate range. (iii) CBT-18.95M, an 18.9M-parameter character model that combines arithmetic extrapolation with tool calling and entity copying. (iv) A matched 1D-RoPE twin of CBT-18.95M, which shows that the 2D coordinates account for the arithmetic extrapolation (254/270 against 0/270 on unseen lengths) and not for the tool-use results. All results are single training runs; test sets and their sizes are given with every number.
+\textbf{Our contributions} are:
+\begin{itemize}
+\item A re-evaluation of nine 1D-position checkpoints (standard, BPE and alternative architectures) on a common random-sum benchmark. None of them solves any unseen length.
+\item Evidence from controlled ablations that 2D place-value coordinates are the factor that enables extrapolation, and that the extrapolation limit is set by the trained coordinate range (Section~\ref{sec:step3}).
+\item CBT-18.95M, an 18.9M-parameter character model that combines exact addition at lengths up to 55 digits (trained on at most 25) with tool calling and entity copying (Sections~\ref{sec:cbt}--\ref{sec:results}).
+\item A matched 1D-RoPE twin of CBT-18.95M, which shows that the 2D coordinates account for the arithmetic extrapolation (254/270 against 0/270 on unseen lengths) and not for the tool-use results (Section~\ref{sec:control}).
+\end{itemize}
+All results are single training runs; test sets and their sizes are given with every number.
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[name=L, width=0.46\textwidth, height=4.6cm,
+  title={\footnotesize Trained on 1--12 digits (18.9M and 1.57M models)},
+  xlabel={Operand digits}, ylabel={Exact (\%)}, xmin=0, xmax=37, ymin=-5, ymax=105,
+  xtick={4,12,20,30}, ytick={0,25,50,75,100},
+  tick label style={font=\scriptsize}, label style={font=\footnotesize},
+  legend style={font=\scriptsize, at={(0.97,0.5)}, anchor=east},
+  grid=major, grid style={gray!25}]
+\addplot[fill=gray!12, draw=none, forget plot] coordinates {(0,-5) (12,-5) (12,105) (0,105)} \closedcycle;
+\addplot[thick, mark=square*, mark size=1.4pt, color=red!70!black] coordinates {(4,100) (8,100) (12,0) (14,0) (16,0) (18,0) (20,0) (25,0) (30,0) (35,0)};
+\addlegendentry{1D-RoPE, 18.9M}
+\addplot[thick, mark=*, mark size=1.4pt, color=blue!70!black] coordinates {(4,100) (8,100) (12,100) (14,100) (16,100) (18,100) (20,100) (25,100) (30,93.3) (35,63.3)};
+\addlegendentry{2D-RoPE, 1.57M}
+\end{axis}
+\begin{axis}[at={(L.east)}, anchor=west, xshift=1.3cm, width=0.46\textwidth, height=4.6cm,
+  title={\footnotesize Trained on 1--25 digits (CBT-18.95M and 1D twin)},
+  xlabel={Operand digits}, xmin=0, xmax=75, ymin=-5, ymax=105,
+  xtick={4,25,40,55,70}, ytick={0,25,50,75,100}, yticklabels={},
+  tick label style={font=\scriptsize}, label style={font=\footnotesize},
+  legend style={font=\scriptsize, at={(0.97,0.5)}, anchor=east},
+  grid=major, grid style={gray!25}]
+\addplot[fill=gray!12, draw=none, forget plot] coordinates {(0,-5) (25,-5) (25,105) (0,105)} \closedcycle;
+\addplot[thick, mark=square*, mark size=1.4pt, color=red!70!black] coordinates {(4,100) (8,100) (12,96.7) (14,100) (16,100) (20,93.3) (25,96.7) (26,0) (30,0) (35,0) (40,0) (45,0) (50,0) (55,0) (60,0) (70,0)};
+\addlegendentry{1D-RoPE twin}
+\addplot[thick, mark=*, mark size=1.4pt, color=blue!70!black] coordinates {(4,100) (8,100) (12,100) (14,100) (16,100) (20,100) (25,100) (26,100) (30,100) (35,100) (40,100) (45,100) (50,100) (55,100) (60,83.3) (70,63.3)};
+\addlegendentry{2D-RoPE, CBT-18.95M}
+\end{axis}
+\end{tikzpicture}
+\caption{\textbf{Standard 1D-RoPE models stop at the edge of their training range; 2D-RoPE models do not.} Correct answers (\%) out of 30 random sums per length. Shaded: lengths seen in training. Left: free-running decoding. Right: teacher-forced greedy agreement.}\label{fig:teaser}
+\end{figure*}
+
+\section{Related Work}\label{sec:related}
+
+\textbf{Length generalization in arithmetic.} Transformers trained on short sums fail on longer ones \cite{nogueira2021investigating,jelassi2023length,dziri2023faith}, and how well they extrapolate depends strongly on the position encoding \cite{kazemnejad2023impact}. Scratchpads of intermediate steps help within the training range \cite{nye2021show,wei2022chainofthought}.
+
+\textbf{Digit-aligned positions.} Abacus embeddings \cite{mcleish2024transformers} add to each digit's token embedding a learned embedding indexed by its position within its number, so that digits of equal place value share an index, and they report addition far beyond the training length. Index hints and positional formats \cite{zhou2024transformers,shen2023positional,duan2023interpolation} insert or reformat tokens to align digits, and randomized positions \cite{ruoss2023randomized} train on position values drawn from a wider range. Our coordinates enter differently: they drive a rotary rotation inside attention, so only coordinate differences matter ($\Delta p = 0$ for aligned digits), a second coordinate carries the step within a column, and the same mechanism extends to dialogue segments. We did not compare against Abacus embeddings or index hints under our protocol, so we make no claim that our scheme is better.
+
+\textbf{Depth.} Looped and universal Transformers \cite{dehghani2019universal,giannou2023looped,fan2024looped} address length generalization through iterated depth. CBT-18.95M uses weight-tied recurrence, but our ablation found no addition benefit from it.
+
+\textbf{Character-level models.} Character and byte models avoid tokenization artifacts but must compose every word from characters and tend to be harder to train than subword models \cite{alrfou2019character,libovicky2022why,mielke2021between,xue2022byt5,clark2022canine,pagnoni2024byte,shaham2021neural}.
+
 
 \section{Task and Evaluation Protocol}\label{sec:setup}
 
@@ -107,7 +158,7 @@ BPE 50k, 50\% philosophy text & 18.9M & 21 & 18 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 
 
 We trained five other architectures on the same data and budget (Table~\ref{tab:step2}): a looped Transformer that reuses two blocks six times \cite{dehghani2019universal,giannou2023looped}, a hierarchical fast/slow recurrent model, a hybrid of gated linear recurrence and attention, a harmonic neural register machine with a learned arithmetic unit (H-NRM), and an Abacus-looped model that adds place-value embeddings and shift augmentation \cite{mcleish2024transformers} (ALSM). The looped, hierarchical and hybrid models behave like the plain Transformer: 30/30 at 4 and 8 digits, 0/30 at 12 and at every longer length. Recurrence and hierarchy do not make a flat index generalize.
 
-The other two did not learn the task in the first place. H-NRM and ALSM score 0/30 even at 4 digits. A teacher-forced check on 24 four-digit sums, given the gold working, separates this from a decoding problem: the plain character model and the hybrid predict 100\% of the next characters, H-NRM 92.6\% (enough per-character error to break a working of 60 or more characters) and ALSM 47.7\%. Our ALSM variant (four core blocks looped six times, Abacus-style place indices with random shift $k=32$) is our own implementation, so this result says nothing about the original Abacus method \cite{mcleish2024transformers}; it only shows that this variant did not fit within the same budget. A sixth baseline, a place-value variant trained with group relative policy optimization, scored 0/30 at every length. Its training traces were stored without line separators because the character vocabulary has no newline token in that format, so the terms ran together (\texttt{100050002006003070102}); we do not interpret this result.
+The other two did not learn the task in the first place. H-NRM and ALSM score 0/30 even at 4 digits. A teacher-forced check on 24 four-digit sums, given the gold working, separates this from a decoding problem: the plain character model and the hybrid predict 100\% of the next characters, H-NRM 92.6\% (enough per-character error to break a working of 60 or more characters) and ALSM 47.7\%. Our ALSM variant (four core blocks looped six times, Abacus-style place indices with random shift $k=32$) is our own implementation, and we regard its result as a failed training run, not as evidence about the original Abacus method \cite{mcleish2024transformers}, which reports addition far beyond its training length. Two observations support this reading: the saved checkpoint scores higher when its place indices are zeroed (63--79\% of post-prompt characters, against 31--59\% with them), so it never learned to use them, and a scaled-down version of the same code ($d=128$, two blocks, three loops, 1--6-digit sums) learns the task to 99.7--100\% next-character accuracy within 600--1,200 steps (with shift $k=0$ and $k=32$; one $k=8$ run reached loss 0.001 and then spiked). We could not recover the original training log, so the cause (we suspect optimization, since the recipe had no learning-rate warmup) is not established, and this baseline should be rerun before it is read as a negative result. A sixth baseline, a place-value variant trained with group relative policy optimization, scored 0/30 at every length. Its training traces were stored without line separators because the character vocabulary has no newline token in that format, so the terms ran together (\texttt{100050002006003070102}); we do not interpret this result.
 
 \begin{table*}[!t]
 \centering
@@ -260,7 +311,9 @@ Because of the replay, sums of up to 25 digits are seen in training and $p_{\max
 
 All results in this section were obtained on CPU from the checkpoints, with greedy decoding. Tool calls are free-running and scored by exact match of the emitted call. Arithmetic is scored by teacher-forced greedy agreement: a sum counts as correct only if the greedy argmax equals the gold scratchpad and answer at every position after the prompt, which is the condition for free-running greedy decoding to reproduce the gold sequence. Each length has 30 random sums (70\% uniform digits, 15\% dense carries, 15\% cascades such as $99\ldots9+b$).
 
-\textbf{Arithmetic.} Table~\ref{tab:cbtarith} and Figure~\ref{fig:cbtarith} show that CBT-18.95M is exact on all 150 sums at 4--16 digits, on all 60 at 20 and 25 digits, and on all 210 at 26--55 digits (Wilson 95\% CI 98.2--100\%), which are longer than any sum in training. Accuracy falls at 60 digits (25/30) and 70 digits (19/30), still inside $p_{\max}=70$ (254/270 pooled over 26--70 digits, CI 90.6--96.3\%). Localizing the first wrong token of the 16 failures at 55--70 digits shows that all are uniform-digit sums with an error inside the scratchpad, at columns 59--70 (token positions 705--840). There is no error in columns 1--58 on any problem, and every cascade (17/17) and dense-carry sum (9/9) at 55--70 digits is exact, so the failures are local errors in a column's carry or digit, not the digit drift of the 1D baselines. At 80 and 100 digits the full trace would be about 1,150 and 1,430 tokens, longer than the 1,024-token context. For reference, the intermediate model scored free-running on a different random sample was exact on 240/240 sums of 16--50 digits, 14/20 at 60 and 6/15 at 70 digits.
+\textbf{Arithmetic.} Table~\ref{tab:cbtarith} and Figure~\ref{fig:teaser} (right) show that CBT-18.95M is exact on all 150 sums at 4--16 digits, on all 60 at 20 and 25 digits, and on all 210 at 26--55 digits (Wilson 95\% CI 98.2--100\%), which are longer than any sum in training. Accuracy falls at 60 digits (25/30) and 70 digits (19/30), still inside $p_{\max}=70$ (254/270 pooled over 26--70 digits, CI 90.6--96.3\%). Localizing the first wrong token of the 16 failures at 55--70 digits shows that all are uniform-digit sums with an error inside the scratchpad, at columns 59--70 (token positions 705--840). There is no error in columns 1--58 on any problem, and every cascade (17/17) and dense-carry sum (9/9) at 55--70 digits is exact, so the failures are local errors in a column's carry or digit, not the digit drift of the 1D baselines. At 80 and 100 digits the full trace would be about 1,150 and 1,430 tokens, longer than the 1,024-token context. For reference, the intermediate model scored free-running on a different random sample was exact on 240/240 sums of 16--50 digits, 14/20 at 60 and 6/15 at 70 digits.
+
+Figure~\ref{fig:grid} varies the two operand lengths independently, with 10 random sums per cell. The 2D model is exact on all 250 cells inside the trained range (both operands up to 25 digits) and on 644 of the 750 sums that have at least one longer operand; the twin gets 234/250 inside the range and 0/750 outside it. The 2D model is perfect for operands up to 50 digits in both positions, and its errors are concentrated where an operand has 60 or 70 digits (195/250 when both exceed 25 digits, with the weakest row and column at 70). So unequal operand lengths cause no extra difficulty beyond the length of the longer operand.
 
 \begin{table}[!t]
 \centering
@@ -283,31 +336,239 @@ Digits & Status & 2D-RoPE & 1D-RoPE \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[!t]
+\begin{figure*}[t]
 \centering
 \begin{tikzpicture}
-\begin{axis}[
-  width=\columnwidth, height=4.6cm,
-  xlabel={Operand digits}, ylabel={Exact (\%)},
-  xmin=0, xmax=75, ymin=-5, ymax=105,
-  xtick={4,16,25,40,55,70}, ytick={0,25,50,75,100},
-  tick label style={font=\scriptsize}, label style={font=\footnotesize},
-  legend style={font=\scriptsize, at={(0.98,0.5)}, anchor=east},
-  grid=major, grid style={gray!25}]
-\addplot[fill=gray!12, draw=none, forget plot] coordinates {(0,-5) (25,-5) (25,105) (0,105)} \closedcycle;
-\draw[dashed, gray] (axis cs:70,-5) -- (axis cs:70,105);
-\node[font=\scriptsize, gray, anchor=south east] at (axis cs:69,55) {$p_{\max}$};
-\node[font=\scriptsize, gray, anchor=north west] at (axis cs:1,102) {trained};
-\addplot[thick, mark=*, mark size=1.4pt, color=blue!70!black] coordinates {
- (4,100) (8,100) (12,100) (14,100) (16,100) (20,100) (25,100) (26,100) (30,100) (35,100) (40,100) (45,100) (50,100) (55,100) (60,83.3) (70,63.3)};
-\addlegendentry{2D-RoPE (CBT-18.95M)}
-\addplot[thick, mark=square*, mark size=1.4pt, color=red!70!black] coordinates {
- (4,100) (8,100) (12,96.7) (14,100) (16,100) (20,93.3) (25,96.7) (26,0) (30,0) (35,0) (40,0) (45,0) (50,0) (55,0) (60,0) (70,0)};
-\addlegendentry{1D-RoPE twin}
+\begin{axis}[name=A, width=0.40\textwidth, height=0.40\textwidth, title={\footnotesize CBT-18.95M (2D-RoPE)},
+  xlabel={Digits in first operand}, ylabel={Digits in second operand},
+  xmin=-0.5, xmax=9.5, ymin=-0.5, ymax=9.5, enlargelimits=false, axis on top,
+  xtick={0,1,2,3,4,5,6,7,8,9}, xticklabels={5,10,15,20,25,30,40,50,60,70}, ytick={0,1,2,3,4,5,6,7,8,9}, yticklabels={5,10,15,20,25,30,40,50,60,70},
+  tick label style={font=\tiny}, label style={font=\footnotesize},
+  colormap={wb}{rgb255=(255,255,255) rgb255=(30,70,160)}, point meta min=0, point meta max=100]
+\addplot[matrix plot*, point meta=explicit, mesh/cols=10, mesh/rows=10] table[meta index=2] {
+x y m
+0 0 100
+1 0 100
+2 0 100
+3 0 100
+4 0 100
+5 0 100
+6 0 100
+7 0 100
+8 0 90
+9 0 90
+0 1 100
+1 1 100
+2 1 100
+3 1 100
+4 1 100
+5 1 100
+6 1 100
+7 1 100
+8 1 70
+9 1 70
+0 2 100
+1 2 100
+2 2 100
+3 2 100
+4 2 100
+5 2 100
+6 2 100
+7 2 100
+8 2 80
+9 2 70
+0 3 100
+1 3 100
+2 3 100
+3 3 100
+4 3 100
+5 3 100
+6 3 100
+7 3 100
+8 3 90
+9 3 60
+0 4 100
+1 4 100
+2 4 100
+3 4 100
+4 4 100
+5 4 100
+6 4 100
+7 4 100
+8 4 100
+9 4 20
+0 5 100
+1 5 100
+2 5 100
+3 5 100
+4 5 100
+5 5 100
+6 5 100
+7 5 100
+8 5 90
+9 5 30
+0 6 100
+1 6 100
+2 6 100
+3 6 100
+4 6 100
+5 6 100
+6 6 100
+7 6 100
+8 6 100
+9 6 40
+0 7 100
+1 7 100
+2 7 100
+3 7 100
+4 7 100
+5 7 100
+6 7 100
+7 7 100
+8 7 80
+9 7 50
+0 8 90
+1 8 100
+2 8 90
+3 8 90
+4 8 90
+5 8 90
+6 8 90
+7 8 90
+8 8 100
+9 8 60
+0 9 80
+1 9 60
+2 9 60
+3 9 60
+4 9 30
+5 9 50
+6 9 40
+7 9 40
+8 9 40
+9 9 60
+};
+\draw[red, thick] (axis cs:-0.5,-0.5) rectangle (axis cs:4.5,4.5);
+\end{axis}
+\begin{axis}[at={(A.east)}, anchor=west, xshift=1.1cm, width=0.40\textwidth, height=0.40\textwidth, title={\footnotesize 1D-RoPE twin},
+  xlabel={Digits in first operand}, yticklabels={},
+  xmin=-0.5, xmax=9.5, ymin=-0.5, ymax=9.5, enlargelimits=false, axis on top,
+  xtick={0,1,2,3,4,5,6,7,8,9}, xticklabels={5,10,15,20,25,30,40,50,60,70}, ytick={0,1,2,3,4,5,6,7,8,9}, yticklabels={5,10,15,20,25,30,40,50,60,70},
+  tick label style={font=\tiny}, label style={font=\footnotesize},
+  colormap={wb}{rgb255=(255,255,255) rgb255=(30,70,160)}, point meta min=0, point meta max=100]
+\addplot[matrix plot*, point meta=explicit, mesh/cols=10, mesh/rows=10] table[meta index=2] {
+x y m
+0 0 100
+1 0 100
+2 0 100
+3 0 100
+4 0 90
+5 0 0
+6 0 0
+7 0 0
+8 0 0
+9 0 0
+0 1 100
+1 1 100
+2 1 100
+3 1 100
+4 1 70
+5 1 0
+6 1 0
+7 1 0
+8 1 0
+9 1 0
+0 2 90
+1 2 100
+2 2 100
+3 2 90
+4 2 70
+5 2 0
+6 2 0
+7 2 0
+8 2 0
+9 2 0
+0 3 100
+1 3 100
+2 3 90
+3 3 100
+4 3 60
+5 3 0
+6 3 0
+7 3 0
+8 3 0
+9 3 0
+0 4 100
+1 4 100
+2 4 90
+3 4 90
+4 4 100
+5 4 0
+6 4 0
+7 4 0
+8 4 0
+9 4 0
+0 5 0
+1 5 0
+2 5 0
+3 5 0
+4 5 0
+5 5 0
+6 5 0
+7 5 0
+8 5 0
+9 5 0
+0 6 0
+1 6 0
+2 6 0
+3 6 0
+4 6 0
+5 6 0
+6 6 0
+7 6 0
+8 6 0
+9 6 0
+0 7 0
+1 7 0
+2 7 0
+3 7 0
+4 7 0
+5 7 0
+6 7 0
+7 7 0
+8 7 0
+9 7 0
+0 8 0
+1 8 0
+2 8 0
+3 8 0
+4 8 0
+5 8 0
+6 8 0
+7 8 0
+8 8 0
+9 8 0
+0 9 0
+1 9 0
+2 9 0
+3 9 0
+4 9 0
+5 9 0
+6 9 0
+7 9 0
+8 9 0
+9 9 0
+};
+\draw[red, thick] (axis cs:-0.5,-0.5) rectangle (axis cs:4.5,4.5);
+\end{axis}
+\begin{axis}[hide axis, scale only axis, width=0cm, height=0cm, at={(A.north east)}, xshift=5.3cm, yshift=-2.0cm,
+  colormap={wb}{rgb255=(255,255,255) rgb255=(30,70,160)}, point meta min=0, point meta max=100,
+  colorbar, colorbar style={height=3.6cm, width=0.28cm, ytick={0,50,100}, tick label style={font=\tiny}, title={\tiny Exact (\%)}}]
+\addplot[draw=none] coordinates {(0,0)};
 \end{axis}
 \end{tikzpicture}
-\caption{\textbf{Addition accuracy by length.} Shaded: operand lengths seen in training.}\label{fig:cbtarith}
-\end{figure}
+\caption{\textbf{Addition accuracy by operand lengths.} Each cell is 10 random sums whose first and second operands have the stated numbers of digits (teacher-forced greedy agreement). Red box: operand lengths seen in training (at most 25 digits). The 2D model stays accurate far outside the box; the 1D twin is accurate only inside it.}\label{fig:grid}
+\end{figure*}
 
 \textbf{Tool use.} The phrasing suite has 26 prompts with paraphrases and invented entities over weather, time, unit conversion, search, calculator, conversational reply and four nested-schema tools (database query, HTTP fetch, calendar event, file manager), whose schemas occur in the training data. The out-of-distribution (OOD) suite has 18 prompts whose entities do not occur in the fine-tuning corpus (audited: 0 overlaps). The unseen-copy suite has 30 prompts in five groups (historical figures, cities, science terms, concepts, invented words), none of whose entities appear in any training stage. Table~\ref{tab:cbttools} reports routing (right tool) and exact match (right tool and argument string).
 
@@ -342,8 +603,6 @@ The experiments so far leave open which of CBT-18.95M's results the coordinate l
 This changes how Section~\ref{sec:step4} should be read. The final fine-tuning data, not the layout, produced the gain in tool use and copying: the intermediate model rose from 17/30 to 30/30 exact copies on the unseen set (entities absent from its corpus), and a 1D model trained on the same data reached the same score. The hypothesis that segment and character-offset coordinates help a character model assemble words is therefore not supported at this scale and sample size; a character model with plain 1D-RoPE copies unseen entities just as well once the data cover the failure modes. What the layout does contribute is arithmetic length generalization. The other direction also holds: a character-level model with 1D positions can be a competent tool user and still be unable to add a 26-digit sum.
 
 \section{Discussion and Limitations}\label{sec:discussion}
-
-\textbf{Relation to prior work.} Place-value alignment is the idea behind Abacus embeddings \cite{mcleish2024transformers}, index hints and positional formats \cite{shen2023positional,zhou2024transformers,duan2023interpolation}, and randomized positions \cite{ruoss2023randomized}; looped Transformers address the same problem through depth \cite{fan2024looped}. Our coordinates are another hand-designed alignment, delivered through the rotary subspace and extended to dialogue segments.
 
 \textbf{Limitations.}
 \begin{itemize}
