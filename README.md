@@ -22,14 +22,14 @@ Small autoregressive Transformers trained from scratch on 1–12 digit addition 
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **1D-RoPE character baseline** (`char_1d_rope_scratchpad_12d.pt`) | 18.9M | 60/60 | 0/30 | 0/150 | 0/60 |
 | **2D-RoPE small model** (`hrm_2d_rope_k32_12d.pt`) | 1.57M | 60/60 | 30/30 | 150/150 | 47/60 |
-| **CBT-18.95M** (V5 model, `cbt_18m_2d_rope_R3_k45_sftv5.pt`, HF: `champion_final.pt`) | 18.9M | 60/60 | 30/30 | 120/120 | 60/60 |
-| **1D-RoPE twin of CBT-18.95M** (`cbt_18m_1d_rope_R3_k45_sftv5.pt`) | 18.9M | 60/60 | 29/30 | 117/120 | 0/60 |
+| **CBT-18.95M** (`cbt_18m_2d_rope_R3_k45_sft.pt`, HF: `champion_final.pt`) | 18.9M | 60/60 | 30/30 | 120/120 | 60/60 |
+| **1D-RoPE twin of CBT-18.95M** (`cbt_18m_1d_rope_R3_k45_sft.pt`) | 18.9M | 60/60 | 29/30 | 117/120 | 0/60 |
 
-Rows 1-2: free-running greedy decoding, exact final answer, 30 random problems per length (14-25 digits: lengths 14, 16, 18, 20, 25). Rows 3-4: teacher-forced greedy agreement with the gold scratchpad and answer (the condition for free-running greedy decoding to reproduce it), 30 problems per length (14-25 digits: lengths 14, 16, 20, 25). Results are in `results/baseline_rerun/`, `results/champion_v3_*.json` and `results/cbt1d_v5_*.json`. Other baselines (BPE, looped, hierarchical, hybrid, H-NRM, ALSM) are in the paper's Tables 1-2.
+Rows 1-2: free-running greedy decoding, exact final answer, 30 random problems per length (14-25 digits: lengths 14, 16, 18, 20, 25). Rows 3-4: teacher-forced greedy agreement with the gold scratchpad and answer (the condition for free-running greedy decoding to reproduce it), 30 problems per length (14-25 digits: lengths 14, 16, 20, 25). Results are in `results/baseline_rerun/` and the CBT result files in `results/`. Other baselines (BPE, looped, hierarchical, hybrid, H-NRM, ALSM) are in the paper's Tables 1-2.
 
-- **Length generalization (V5 model, $p_{\max} = 25 + k = 70$)**: teacher-forced, 30 problems per length. **150/150** at 4-16 digits, **60/60** at 20-25 (seen), **210/210** at 26-55 digits (unseen, 95% Wilson CI `[98.2, 100.0]%`), **25/30** at 60 and **19/30** at 70 digits (pooled 26-70: **254/270**). The remaining failures are local carry or digit errors at columns 59-70 of uniform sums; every cascade and dense-carry sum at 55-70 digits is exact. Traces for 80 or more digits exceed the 1,024-token context.
-- **Tool use (V5 model)**: **26/26** exact calls on the phrasing suite, **18/18** on the OOD suite, **30/30** exact copies of entities absent from the training corpus. The V5 data was broadened after the previous model's failures on the first two suites were seen, so the unseen-30 set is the cleaner evidence.
-- **1D-RoPE control (same architecture, V5 data and steps)**: on 26-70 digits the 2D model scores **254/270** and the 1D twin **0/270** (it fails from column 1 of the scratchpad); on tool use they are equal (74/74 vs 73/74 exact calls). So the 2D coordinates account for the arithmetic extrapolation, not for the tool-use results. Details: `results/cbt_2d_vs_1d_rope_ablation_report.md` and `results/champion_v3_performance_report.md`.
+- **Length generalization (CBT-18.95M, $p_{\max} = 25 + k = 70$)**: teacher-forced, 30 problems per length. **150/150** at 4-16 digits, **60/60** at 20-25 (seen), **210/210** at 26-55 digits (unseen, 95% Wilson CI `[98.2, 100.0]%`), **25/30** at 60 and **19/30** at 70 digits (pooled 26-70: **254/270**). The remaining failures are local carry or digit errors at columns 59-70 of uniform sums; every cascade and dense-carry sum at 55-70 digits is exact. Traces for 80 or more digits exceed the 1,024-token context.
+- **Tool use (CBT-18.95M)**: **26/26** exact calls on the phrasing suite, **18/18** on the OOD suite, **30/30** exact copies of entities absent from the training corpus. The final fine-tuning data was broadened after the intermediate model's failures on the first two suites were seen, so the unseen-30 set is the cleaner evidence.
+- **1D-RoPE control (same architecture, data and steps)**: on 26-70 digits the 2D model scores **254/270** and the 1D twin **0/270** (it fails from column 1 of the scratchpad); on tool use they are equal (74/74 vs 73/74 exact calls). So the 2D coordinates account for the arithmetic extrapolation, not for the tool-use results. Details: `results/cbt_2d_vs_1d_rope_ablation_report.md`.
 
 ---
 
@@ -42,7 +42,7 @@ The repository champion model is **Character Based Transformer (CBT)** (~18.95M 
 - **Physical Layers**: L = 6
 - **Recurrent Passes**: R = 3 (Effective Depth = 18 layers)
 - **Positional Bias**: Decoupled 2D-RoPE with selective coordinate shifting
-- **Training Trajectory**: pretraining on 1-15-digit addition and tool dialogues, search-copy and all-tools SFT, V4 SFT (12,000 steps), then V5 SFT (23,927 steps; decontaminated stream with arithmetic replay of 1-25 digits). The released weights are the V5 model. The previous V4 checkpoint is `checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv4.pt`.
+- **Training Trajectory**: pretraining on 1-15-digit addition and tool dialogues, search-copy and all-tools SFT, an intermediate SFT round (12,000 steps), then a final SFT round (23,927 steps; decontaminated stream with arithmetic replay of 1-25 digits). The released weights are the model after the final round.
 
 ### Model Weights on Hugging Face
 
@@ -54,7 +54,7 @@ The trained model checkpoint (`champion_final.pt`, ~75.8 MB) is available on Hug
 To download and place the weights locally:
 ```bash
 # Using huggingface_hub
-.venv/bin/python benchmarks/download_from_hf.py  # saves checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt
+.venv/bin/python benchmarks/download_from_hf.py  # saves checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sft.pt
 ```
 
 ---
@@ -208,7 +208,7 @@ python benchmarks/download_from_hf.py
 
 **Method C: Hugging Face Python SDK**
 ```bash
-.venv/bin/python benchmarks/download_from_hf.py  # saves checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt
+.venv/bin/python benchmarks/download_from_hf.py  # saves checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sft.pt
 ```
 
 ### 2. Pushing New Weights to Hugging Face

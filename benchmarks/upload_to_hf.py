@@ -44,12 +44,12 @@ metrics:
 
 ## 1. Model Overview
 
-**Character-Based Transformer (CBT-18.95M)** is an 18.94M-parameter character-level Transformer (111-token vocabulary) whose tokens carry a rule-assigned two-dimensional coordinate $(p, \\tau)$ used by **Decoupled 2D Rotary Position Embeddings (2D-RoPE)**, with weight-tied recurrent depth ($R = 3$). This release is the **V5 model** (`champion_final.pt`): pretraining, search-copy and all-tools fine-tuning, V4 fine-tuning, then a 23,927-step V5 fine-tuning on a decontaminated online stream (35% search copy, 20% arithmetic replay of 1-25 digits, the rest multi-tool and chat). Coordinate shift masking uses $k=45$, so $p_{\\max} = 25 + 45 = 70$.
+**Character-Based Transformer (CBT-18.95M)** is an 18.94M-parameter character-level Transformer (111-token vocabulary) whose tokens carry a rule-assigned two-dimensional coordinate $(p, \\tau)$ used by **Decoupled 2D Rotary Position Embeddings (2D-RoPE)**, with weight-tied recurrent depth ($R = 3$). This release (`champion_final.pt`) is the model after supervised fine-tuning: pretraining, search-copy and all-tools fine-tuning, an intermediate 12,000-step round, then a final 23,927-step round on a decontaminated online stream (35% search copy, 20% arithmetic replay of 1-25 digits, the rest multi-tool and chat). Coordinate shift masking uses $k=45$, so $p_{\\max} = 25 + 45 = 70$.
 
 Results (greedy decoding; Wilson 95% CIs are in the paper and in `results/`):
 - **Addition**, 30 random problems per length (70% uniform, 15% dense carry, 15% cascades), scored as teacher-forced greedy agreement with the gold scratchpad and answer: **150/150** at 4-16 digits, **60/60** at 20 and 25 digits (seen), **210/210** at 26-55 digits (unseen), **25/30** at 60 and **19/30** at 70 digits. Pooled over the unseen 26-70 digits: **254/270**.
-- **Tool use**: **26/26** exact calls on a 26-prompt phrasing suite, **18/18** on 18 out-of-distribution prompts, and **30/30** exact copies of entities absent from the training corpus (unseen-30). The V5 data was broadened after the previous model's failures on the first two suites were seen, so the unseen-30 set is the cleaner evidence.
-- **1D-RoPE control**: a twin with the same architecture, V5 data and step count but standard 1D-RoPE scores **0/270** at 26-70 digits and **73/74** exact tool calls. The 2D coordinates account for the arithmetic extrapolation, not for the tool-use results.
+- **Tool use**: **26/26** exact calls on a 26-prompt phrasing suite, **18/18** on 18 out-of-distribution prompts, and **30/30** exact copies of entities absent from the training corpus (unseen-30). The final fine-tuning data was broadened after the intermediate model's failures on the first two suites were seen, so the unseen-30 set is the cleaner evidence.
+- **1D-RoPE control**: a twin with the same architecture, data and step count but standard 1D-RoPE scores **0/270** at 26-70 digits and **73/74** exact tool calls. The 2D coordinates account for the arithmetic extrapolation, not for the tool-use results.
 - **Baselines**: standard 1D-RoPE models trained on 1-12 digit sums score 0/30 at every length from 14 to 35 digits (character and BPE vocabularies; looped, hierarchical and hybrid variants too).
 
 All results are single training runs. Details, limitations and the failure analysis are in the paper.
@@ -100,7 +100,7 @@ python interactive.py --ckpt champion_final.pt
 
 ## 4. Files
 
-`champion_final.pt` (V5 model), source files for stand-alone execution, `RESEARCH_PAPER.md`, and the evaluation results in JSON.
+`champion_final.pt`, source files for stand-alone execution, `RESEARCH_PAPER.md`, and the evaluation results in JSON.
 
 ---
 
@@ -121,7 +121,7 @@ def parse_args():
     parser.add_argument("--repo_id", type=str, required=True, help="HF Repo ID in format 'username/repo_name'")
     parser.add_argument("--token", type=str, default=None, help="Hugging Face User Access Token (write access)")
     parser.add_argument("--private", action="store_true", help="Set repository to private")
-    parser.add_argument("--ckpt", type=str, default="checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt", help="Path to checkpoint")
+    parser.add_argument("--ckpt", type=str, default="checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sft.pt", help="Path to checkpoint")
     return parser.parse_args()
 
 
@@ -162,27 +162,28 @@ def main():
                 print(f"  [OK] Staged {fname}")
 
         # 4. Copy research paper and evaluation results
-        extra_files = [
-            "RESEARCH_PAPER.md",
-            "results/champion_v3_arithmetic.json",
-            "results/champion_v3_arithmetic_4_16d.json",
-            "results/champion_v3_phrasing.json",
-            "results/champion_v3_ood.json",
-            "results/champion_v3_unseen_ood.json",
-            "results/cbt1d_v5_arithmetic.json",
-            "results/equalized_15d_1024_and_ruoss_sweep.json",
-        ]
-        for ef in extra_files:
-            if os.path.isfile(ef):
-                shutil.copy2(ef, os.path.join(tmp_dir, os.path.basename(ef)))
-                print(f"  [OK] Staged {ef}")
+        extra_files = {
+            "RESEARCH_PAPER.md": "RESEARCH_PAPER.md",
+            "results/champion_v3_arithmetic.json": "cbt_2d_arithmetic_20_70d.json",
+            "results/champion_v3_arithmetic_4_16d.json": "cbt_2d_arithmetic_4_16d.json",
+            "results/champion_v3_phrasing.json": "cbt_2d_phrasing.json",
+            "results/champion_v3_ood.json": "cbt_2d_ood.json",
+            "results/champion_v3_unseen_ood.json": "cbt_2d_unseen_copy.json",
+            "results/cbt1d_v5_arithmetic.json": "cbt_1d_twin_arithmetic_20_70d.json",
+            "results/cbt1d_v5_arithmetic_4_16d.json": "cbt_1d_twin_arithmetic_4_16d.json",
+            "results/equalized_15d_1024_and_ruoss_sweep.json": "equalized_15d_1024_and_ruoss_sweep.json",
+        }
+        for src, dst in extra_files.items():
+            if os.path.isfile(src):
+                shutil.copy2(src, os.path.join(tmp_dir, dst))
+                print(f"  [OK] Staged {src} as {dst}")
 
         print(f"[INFO] Uploading complete model bundle to https://huggingface.co/{args.repo_id}...")
         api.upload_folder(
             folder_path=tmp_dir,
             repo_id=args.repo_id,
             repo_type="model",
-            commit_message="[UPDATE] Replace weights with the V5 model; update paper, model card and evaluation results"
+            commit_message="[UPDATE] Replace weights with the final SFT model; update paper, model card and evaluation results"
         )
         print(f"[PASS] Successfully uploaded ScaledGPT champion model to https://huggingface.co/{args.repo_id}")
 

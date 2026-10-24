@@ -1,6 +1,6 @@
 """
 Expanded Random & Multi-Carry Arithmetic Extrapolation Benchmark (16 to 100 Digits).
-Evaluates CBT-18.95M (`checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt`) using KV-cached batched greedy decoding
+Evaluates CBT-18.95M (`checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sft.pt`) using KV-cached batched greedy decoding
 across unseen digit lengths from 16 to 100 digits, logging per-length accuracy,
 internal scratchpad accuracy, 95% Wilson confidence intervals, and failure modes.
 """
@@ -210,7 +210,7 @@ def sample_problems_for_length(d: int, n_samples: int, rng: random.Random) -> Li
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate CBT Arithmetic Extrapolation")
-    parser.add_argument("--ckpt", type=str, default="checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt")
+    parser.add_argument("--ckpt", type=str, default="checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sft.pt")
     parser.add_argument("--samples", type=int, default=None, help="Override sample count per length")
     parser.add_argument("--max-digits", type=int, default=100, help="Maximum digit length to evaluate")
     parser.add_argument("--out-json", type=str, default="results/random_extrapolation_16_to_100d.json")

@@ -35,7 +35,7 @@ from champion_model.scaled_t4.tokenizer import ScaledTokenizer
 from champion_model.scaled_t4.dataset import format_addition_char_scratchpad, extract_scratchpad_answer
 from benchmarks.evaluate_unseen_ood import UNSEEN_OOD_30_CASES
 
-DEFAULT_CKPT = "checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt"
+DEFAULT_CKPT = "checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sft.pt"
 TRAIN_CACHE = "champion_model/scaled_t4/data/sft_dataset_v4.pt"
 DATASET_SRC = "champion_model/scaled_t4/dataset.py"
 

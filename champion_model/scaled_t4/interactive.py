@@ -242,7 +242,7 @@ def run_dialogue_prompt(model: ScaledGPT, tokenizer: ScaledTokenizer, user_input
 
 def main():
     parser = argparse.ArgumentParser(description="ScaledGPT Interactive CLI")
-    parser.add_argument("--ckpt", type=str, default="checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt", help="Path to checkpoint")
+    parser.add_argument("--ckpt", type=str, default="checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sft.pt", help="Path to checkpoint")
     parser.add_argument("--prompt", type=str, default=None, help="Execute a single prompt and exit")
     parser.add_argument("--threads", type=int, default=8, help="Number of CPU threads for inference")
     args = parser.parse_args()
@@ -258,7 +258,7 @@ def main():
     candidates = [
         args.ckpt,
         os.path.join(ROOT_DIR, args.ckpt),
-        os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt"),
+        os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sft.pt"),
         os.path.join(ROOT_DIR, "champion_final.pt"),
         os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k32_base.pt"),
         os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k32_pretrain.pt"),
@@ -275,7 +275,7 @@ def main():
             print("[INFO] Local weights not found. Automatically pulling champion weights from Hugging Face (Neithanvarvas/CBT)...")
             target_dir = os.path.join(ROOT_DIR, "checkpoints", "cbt")
             resolved_path = hf_hub_download(repo_id="Neithanvarvas/CBT", filename="champion_final.pt", local_dir=target_dir)
-            local_path = os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt")
+            local_path = os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sft.pt")
             os.replace(resolved_path, local_path)
             resolved_path = local_path
             print(f"[PASS] Successfully pulled weights to: {resolved_path}")

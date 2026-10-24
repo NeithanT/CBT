@@ -138,7 +138,7 @@ def main():
     parser.add_argument("--head", type=int, default=0, help="Attention head to visualize")
     args = parser.parse_args()
 
-    champion_ckpt = os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt")
+    champion_ckpt = os.path.join(ROOT_DIR, "checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sft.pt")
 
     # If no specific checkpoint is passed, try champion model or pull from Hugging Face
     if args.checkpoint is None:

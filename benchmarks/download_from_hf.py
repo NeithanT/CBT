@@ -2,7 +2,7 @@
 """
 Download Champion Weights from Hugging Face Hub.
 Pulls 'champion_final.pt' from https://huggingface.co/Neithanvarvas/CBT
-and stores it locally as 'checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sftv5.pt'.
+and stores it locally as 'checkpoints/cbt/cbt_18m_2d_rope_R3_k45_sft.pt'.
 """
 
 import os
@@ -19,7 +19,7 @@ DEFAULT_REPO = "Neithanvarvas/CBT"
 DEFAULT_FILENAME = "champion_final.pt"
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_TARGET_DIR = os.path.join(REPO_ROOT, "checkpoints", "cbt")
-LOCAL_NAME = "cbt_18m_2d_rope_R3_k45_sftv5.pt"
+LOCAL_NAME = "cbt_18m_2d_rope_R3_k45_sft.pt"
 
 
 def parse_args():

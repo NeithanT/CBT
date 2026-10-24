@@ -82,7 +82,7 @@ show_help() {
     echo "  # 2. Run All-Tools Annealing SFT with custom steps"
     echo "  ./train.sh checkpoints/cbt/cbt_18m_2d_rope_R3_k32_base.pt 12000 sft"
     echo ""
-    echo "  # 2b. Curriculum V5 SFT from the champion -> cbt_18m_2d_rope_R3_k45_sftv5.pt (6.0 h SFT inside a 7 h session)"
+    echo "  # 2b. final curriculum SFT from the champion -> cbt_18m_2d_rope_R3_k45_sft.pt (6.0 h SFT inside a 7 h session)"
     echo "  ./train.sh $DEFAULT_CKPT_DIR/cbt_18m_2d_rope_R3_k45_sftv4.pt 200000 sft_v3"
     echo ""
     echo "  # 3. Resume full 10-hour pretraining (e.g., Session 2 up to 100k steps)"
@@ -148,7 +148,7 @@ case "$MODE" in
             --max-hours 6.0 \
             --save-interval 2000 \
             --probe-interval 2000 \
-            --save-ckpt "$DEFAULT_CKPT_DIR/cbt_18m_2d_rope_R3_k45_sftv5.pt" \
+            --save-ckpt "$DEFAULT_CKPT_DIR/cbt_18m_2d_rope_R3_k45_sft.pt" \
             --max-keep-ckpts 2 \
             "${@:4}"
         ;;
